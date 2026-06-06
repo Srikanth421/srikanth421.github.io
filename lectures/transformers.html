@@ -1097,6 +1097,158 @@ Final = Concat × W_O = <span class="hi">[0.71, 0.83, 0.48, 0.55]</span><br><br>
       <div class="callout callout-green">✅ After 6 passes, "it was tired" is fully resolved to "the cat was tired" — the model has built a complete understanding.</div>
     </div>
   </div>
+
+  <!-- WORKED MULTI-PASS EXAMPLE -->
+  <div class="two-col" style="margin-top:18px;">
+    <div class="card card-tech full">
+      <div class="lbl lbl-tech">⚙ Worked Example — Watching "bank" Get Disambiguated Across 3 Passes</div>
+      <p style="font-size:15px;color:var(--ink2);margin-bottom:6px;">Sentence: <strong>"The bank by the river was closed"</strong></p>
+      <p style="font-size:14px;color:var(--ink3);margin-bottom:16px;">The word "bank" is ambiguous — financial institution or river bank? Watch how each encoder pass resolves this.</p>
+
+      <!-- INITIAL STATE -->
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:16px;border:1.5px solid var(--border);margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--ink);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔤 Before Encoder — Raw Embeddings (from Word2Vec/learned)</div>
+        <div class="code" style="font-size:12px;">
+<span class="cm">// Static embeddings — "bank" has ONE fixed vector</span><br>
+<span class="cm">// that averages BOTH meanings (financial + river)</span><br><br>
+"bank"  = [<span class="hi">0.50, 0.50, 0.50, 0.50</span>]  <span class="cm">← ambiguous! halfway between both meanings</span><br>
+"river" = [0.10, 0.85, 0.90, 0.20]  <span class="cm">← nature, water, outdoor</span><br>
+"closed"= [0.60, 0.30, 0.20, 0.70]  <span class="cm">← state, shutdown, inactive</span><br>
+"The"   = [0.05, 0.05, 0.10, 0.05]  <span class="cm">← almost no semantic content</span>
+        </div>
+      </div>
+
+      <!-- PASS 1 -->
+      <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #bfdbfe;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔄 Pass 1 — Basic Word Relationships</div>
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:10px;">Self-attention computes: what does "bank" attend to?</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Attention weights for "bank":</div>
+            <div class="code" style="font-size:12px;">
+The:    <span class="ro">0.05</span>  ░<br>
+bank:   <span class="mn">0.15</span>  ██<br>
+by:     <span class="ro">0.05</span>  ░<br>
+the:    <span class="ro">0.05</span>  ░<br>
+river:  <span class="mn">0.30</span>  ████<br>
+was:    <span class="ro">0.10</span>  █<br>
+closed: <span class="mn">0.30</span>  ████
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">After Add &amp; Norm:</div>
+            <div class="code" style="font-size:12px;">
+<span class="cm">// Attention output for "bank":</span><br>
+attn = <span class="mn">[0.31, 0.58, 0.52, 0.41]</span><br><br>
+<span class="cm">// Add residual (original bank):</span><br>
+= [0.31+0.50, 0.58+0.50,<br>
+&nbsp;&nbsp; 0.52+0.50, 0.41+0.50]<br>
+= [0.81, 1.08, 1.02, 0.91]<br><br>
+<span class="cm">// Layer Norm → rescale:</span><br>
+bank₁ = <span class="hi">[0.42, 0.62, 0.58, 0.45]</span>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-blue" style="margin-top:10px;">Pass 1 result: "bank" shifted slightly toward "river" (0.50→0.62 in dim 2) and "closed" (0.50→0.45 in dim 4). It's starting to absorb context, but still ambiguous.</div>
+      </div>
+
+      <!-- FFN between passes -->
+      <div style="background:#fff7ed;border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #fdba74;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--amber);font-size:12px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">⚡ Feed-Forward Network (after each attention)</div>
+        <div style="font-size:13.5px;color:var(--ink2);">
+          <code style="background:var(--ink);color:#e2e8f0;padding:2px 8px;border-radius:4px;font-size:12px;">FFN(x) = ReLU(x · W₁ + b₁) · W₂ + b₂</code><br>
+          <span style="font-size:13px;color:var(--ink3);margin-top:4px;display:inline-block;">Applied independently to each word. Transforms each vector through non-linear layers. Think of it as: attention figured out <em>what's related</em>, FFN now processes <em>what that relationship means</em>.</span>
+        </div>
+      </div>
+
+      <!-- PASS 2 -->
+      <div style="background:var(--green-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #86efac;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--green);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔄 Pass 2 — Deeper Context (Disambiguation Happening)</div>
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:10px;">Now "bank" already carries some "river" information from Pass 1. This enriched vector goes through attention again:</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Updated attention weights:</div>
+            <div class="code" style="font-size:12px;">
+The:    <span class="ro">0.03</span>  ░<br>
+bank:   <span class="ro">0.08</span>  █<br>
+by:     <span class="ro">0.04</span>  ░<br>
+the:    <span class="ro">0.03</span>  ░<br>
+river:  <span class="hi">0.52</span>  ███████  <span class="cm">↑↑</span><br>
+was:    <span class="ro">0.08</span>  █<br>
+closed: <span class="mn">0.22</span>  ███
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">After Add &amp; Norm:</div>
+            <div class="code" style="font-size:12px;">
+<span class="cm">// "river" now dominates attention</span><br>
+<span class="cm">// "bank" absorbs more river-ness</span><br><br>
+bank₂ = <span class="hi">[0.28, 0.74, 0.71, 0.38]</span><br><br>
+<span class="cm">// Compare to start:</span><br>
+<span class="cm">// bank₀ = [0.50, 0.50, 0.50, 0.50]</span><br>
+<span class="cm">// bank₂ = [0.28, 0.74, 0.71, 0.38]</span><br>
+<span class="cm">//          ↓low  ↑high ↑high ↓low</span><br>
+<span class="cm">// Shifting toward "nature" dims!</span>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-green" style="margin-top:10px;">Pass 2 result: "river" attention jumped from 0.30 → <strong>0.52</strong>. The enriched "bank" vector from Pass 1 made it even more compatible with "river" in Pass 2. <strong>Disambiguation is snowballing.</strong></div>
+      </div>
+
+      <!-- PASS 3 -->
+      <div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #c4b5fd;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--violet);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔄 Pass 3 — Full Understanding Emerges</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Final attention weights:</div>
+            <div class="code" style="font-size:12px;">
+The:    <span class="ro">0.02</span>  ░<br>
+bank:   <span class="ro">0.05</span>  ░<br>
+by:     <span class="ro">0.03</span>  ░<br>
+the:    <span class="ro">0.02</span>  ░<br>
+river:  <span class="hi">0.63</span>  █████████ <span class="cm">↑↑↑</span><br>
+was:    <span class="ro">0.05</span>  ░<br>
+closed: <span class="mn">0.20</span>  ███
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Final "bank" vector:</div>
+            <div class="code" style="font-size:12px;">
+bank₃ = <span class="hi">[0.15, 0.82, 0.85, 0.30]</span><br><br>
+<span class="cm">// Compare all 3 passes:</span><br>
+bank₀ = [0.50, 0.50, 0.50, 0.50] <span class="cm">ambiguous</span><br>
+bank₁ = [0.42, 0.62, 0.58, 0.45] <span class="cm">leaning</span><br>
+bank₂ = [0.28, 0.74, 0.71, 0.38] <span class="cm">clearer</span><br>
+bank₃ = [<span class="hi">0.15, 0.82, 0.85, 0.30</span>] <span class="cm">resolved!</span><br><br>
+<span class="cm">// Now almost identical to "river":</span><br>
+river = [0.10, 0.85, 0.90, 0.20] <span class="cm">✅ match!</span>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-violet" style="margin-top:10px;">Pass 3 result: "bank" vector is now <strong>almost identical to "river"</strong> — the model has fully decided this is a river bank, not a financial bank. The meaning was resolved through 3 progressive passes of self-attention, each building on the previous one.</div>
+      </div>
+
+      <!-- SUMMARY VISUAL -->
+      <div style="background:var(--ink);border-radius:var(--r-sm);padding:16px;border:1.5px solid var(--ink);">
+        <div style="font-weight:700;color:#86efac;font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 The Journey of "bank" Through 3 Encoder Passes</div>
+        <div class="code" style="font-size:12px;background:transparent;padding:0;margin:0;">
+<span class="cm">// Attention to "river" at each pass:</span><br>
+Pass 0 (input):  "bank" has <span class="ro">no context</span>         river attn: —<br>
+Pass 1:          "bank" gets <span class="mn">slight context</span>    river attn: 0.30  ████<br>
+Pass 2:          "bank" gets <span class="mn">strong context</span>   river attn: 0.52  ███████<br>
+Pass 3:          "bank" = <span class="hi">river bank ✅</span>       river attn: 0.63  █████████<br><br>
+<span class="cm">// Each pass reinforces the signal — the "river" connection</span><br>
+<span class="cm">// gets stronger because Pass 1's enriched vector makes</span><br>
+<span class="cm">// "bank" more compatible with "river" in Pass 2, which</span><br>
+<span class="cm">// makes it even MORE compatible in Pass 3. Snowball effect.</span>
+        </div>
+      </div>
+
+      <div class="callout callout-blue" style="margin-top:14px;">
+        <strong>💡 Key insight for students:</strong> Word2Vec would give "bank" the same vector regardless of context — stuck at [0.50, 0.50, 0.50, 0.50] forever. The Transformer encoder, through multiple passes of self-attention + residual connections + feed-forward, progressively reshapes "bank" until it means exactly what the sentence needs it to mean. <strong>This is why Transformers replaced Word2Vec.</strong>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ══════════════════════════════════════
