@@ -391,6 +391,7 @@ main{max-width:1220px;margin:0 auto;padding:0 22px 80px;}
 <!-- ── NAV ── -->
 <nav class="nav-bar">
   <a href="#s0">Why Transformers?</a>
+  <a href="#s-rnn">RNNs &amp; CNNs</a>
   <a href="#s1">Overview</a>
   <a href="#s2">Positional Encoding</a>
   <a href="#s3">Self-Attention</a>
@@ -461,6 +462,127 @@ main{max-width:1220px;margin:0 auto;padding:0 22px 80px;}
         <div class="tl-item"><div class="tl-label">BERT (2018)</div><div class="tl-dot current"></div><div class="tl-spacer"></div></div>
         <div class="tl-item"><div class="tl-spacer"></div><div class="tl-dot current"></div><div class="tl-label cur-lbl">GPT-3 (2020)</div></div>
         <div class="tl-item"><div class="tl-label">ChatGPT (2022)</div><div class="tl-dot current"></div><div class="tl-spacer"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION — RNNs & CNNs (What Came Before)
+══════════════════════════════════════ -->
+<section class="section" id="s-rnn">
+  <div class="sec-head">
+    <div class="sec-num">⟳</div>
+    <h2>RNNs &amp; CNNs — What Came Before Transformers</h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Recurrent Neural Networks (RNNs / LSTMs)</div>
+      <p>RNNs process words <strong>one at a time, left to right</strong>. Each step's output feeds into the next step — creating a chain of hidden states.</p>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:12px 0;">
+        <div style="background:var(--blue-pale);border:1.5px solid #93c5fd;border-radius:8px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--blue);text-align:center;">The<br><span style="font-size:10px;color:var(--ink3);">step 1</span></div>
+        <div style="font-size:18px;color:var(--blue);">→</div>
+        <div style="background:var(--blue-pale);border:1.5px solid #93c5fd;border-radius:8px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--blue);text-align:center;">cat<br><span style="font-size:10px;color:var(--ink3);">step 2</span></div>
+        <div style="font-size:18px;color:var(--blue);">→</div>
+        <div style="background:var(--blue-pale);border:1.5px solid #93c5fd;border-radius:8px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--blue);text-align:center;">sat<br><span style="font-size:10px;color:var(--ink3);">step 3</span></div>
+        <div style="font-size:18px;color:var(--blue);">→</div>
+        <div style="background:var(--blue-pale);border:1.5px solid #93c5fd;border-radius:8px;padding:8px 14px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;color:var(--blue);text-align:center;">on<br><span style="font-size:10px;color:var(--ink3);">step 4</span></div>
+        <div style="font-size:18px;color:var(--ink3);">→ ⋯</div>
+      </div>
+      <p><strong>Two critical problems:</strong></p>
+      <div class="callout callout-rose" style="margin-bottom:8px;">🚫 <strong>Vanishing gradient:</strong> By word 50, the memory of word 1 has almost completely faded. Long-range dependencies are lost — the network "forgets" early words.</div>
+      <div class="callout callout-rose">🚫 <strong>No parallelization:</strong> Step 5 must wait for step 4, which waits for step 3… Training is inherently sequential and <em>slow</em>. Cannot leverage GPUs efficiently.</div>
+      <p style="margin-top:10px;font-size:14px;color:var(--ink3);">LSTMs (Long Short-Term Memory) partially fixed the memory problem with "gates" that control what to remember/forget — but they're still sequential and still struggle beyond ~200 words.</p>
+    </div>
+
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy — The Conveyor Belt</div>
+      <h3>RNN = Reading Through a Keyhole</h3>
+      <p>Imagine reading a book but you can only see <strong>one word at a time</strong> through a tiny keyhole. You slide the book left, word by word. You try to remember what you read earlier, but by page 10, you've forgotten the details of page 1.</p>
+      <div style="background:#fff;border-radius:var(--r);padding:14px;border:1.5px solid var(--border);margin:12px 0;font-size:14px;color:var(--ink2);">
+        <div>Word 1: "The" — 💡 clear memory</div>
+        <div>Word 10: "because" — 🔅 fading memory of "The"</div>
+        <div>Word 50: "tired" — 💤 word 1 is practically gone</div>
+      </div>
+      <p>LSTMs added a "notebook" to jot down important things — but the notebook has limited space and still fills up on long documents.</p>
+    </div>
+
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Convolutional Neural Networks (CNNs for Text)</div>
+      <p>CNNs slide a <strong>fixed-size window</strong> (e.g., 3–5 words) across the sentence, detecting local patterns like word combinations and phrases.</p>
+      <div style="margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:12.5px;">
+        <div style="display:flex;gap:4px;margin-bottom:6px;">
+          <div style="padding:6px 10px;background:var(--green-pale);border:1.5px solid #86efac;border-radius:6px;color:var(--green);font-weight:600;">The</div>
+          <div style="padding:6px 10px;background:var(--green-pale);border:1.5px solid #86efac;border-radius:6px;color:var(--green);font-weight:600;">cat</div>
+          <div style="padding:6px 10px;background:var(--green-pale);border:1.5px solid #86efac;border-radius:6px;color:var(--green);font-weight:600;">sat</div>
+          <div style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--ink3);">on</div>
+          <div style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--ink3);">the</div>
+          <div style="padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;color:var(--ink3);">wall</div>
+        </div>
+        <div style="font-size:11px;color:var(--ink3);margin-bottom:4px;">↑ window size = 3, slides right →</div>
+      </div>
+      <div class="callout callout-rose">🚫 <strong>Limited range:</strong> A window of 3 words can't directly connect word 1 to word 80. You'd need to stack many layers, and even then long-range connections are weak.</div>
+      <p style="margin-top:8px;font-size:14px;color:var(--ink3);">CNNs are great for images (detecting edges → shapes → objects). For text, they capture local phrases ("not good", "very happy") but miss sentence-level relationships.</p>
+    </div>
+
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy — The Magnifying Glass</div>
+      <h3>CNN = Reading With a Magnifying Glass</h3>
+      <p>You hold a magnifying glass over a newspaper. You can see 3–5 words at a time in sharp detail — great for spotting specific phrases.</p>
+      <p>But you can <strong>never see the whole article at once</strong>. If the first sentence says "John" and the last sentence says "he", you can't connect them without moving the glass back and forth many times.</p>
+    </div>
+
+    <!-- COMPARISON TABLE -->
+    <div class="card card-visual full">
+      <div class="lbl lbl-visual">📊 Why Transformers Won</div>
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <tr>
+            <th style="width:20%;">Feature</th>
+            <th>🔄 RNN / LSTM</th>
+            <th>🔲 CNN</th>
+            <th style="background:#1d4ed8;">⚡ Transformer</th>
+          </tr>
+          <tr>
+            <td><strong>Processing</strong></td>
+            <td>Sequential (one word at a time)</td>
+            <td>Sliding window (local patterns)</td>
+            <td class="yes">All words simultaneously</td>
+          </tr>
+          <tr>
+            <td><strong>Long-range</strong></td>
+            <td class="no">Weak — memory fades over distance</td>
+            <td class="no">Limited — fixed window size</td>
+            <td class="yes">Word 1 ↔ Word 500 equally easy</td>
+          </tr>
+          <tr>
+            <td><strong>Parallelizable</strong></td>
+            <td class="no">No — each step waits for previous</td>
+            <td class="yes">Yes — windows are independent</td>
+            <td class="yes">Yes — all attention computed at once</td>
+          </tr>
+          <tr>
+            <td><strong>Training speed</strong></td>
+            <td class="no">Slow</td>
+            <td>Medium</td>
+            <td class="yes">Fast (GPU-friendly)</td>
+          </tr>
+          <tr>
+            <td><strong>Context understanding</strong></td>
+            <td>Sequential context only</td>
+            <td>Local context only</td>
+            <td class="yes">Full bidirectional context</td>
+          </tr>
+          <tr>
+            <td><strong>Best for</strong></td>
+            <td>Short sequences, time-series</td>
+            <td>Images, local text patterns</td>
+            <td class="yes">Everything NLP + vision + audio</td>
+          </tr>
+        </table>
+      </div>
+      <div class="callout callout-blue" style="margin-top:10px;">
+        <strong>The one-liner:</strong> RNNs read one word at a time and forget early words. CNNs look through a small window and miss distant relationships. Transformers let every word see every other word simultaneously — that's why they won.
       </div>
     </div>
   </div>
