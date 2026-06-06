@@ -1303,6 +1303,185 @@ Pass 3:          "bank" = <span class="hi">river bank ✅</span>       river att
       </ol>
     </div>
   </div>
+
+  <!-- WORKED DECODER EXAMPLE -->
+  <div class="two-col" style="margin-top:18px;">
+    <div class="card card-tech full">
+      <div class="lbl lbl-tech">⚙ Worked Example — Decoder Translating "The bank by the river was closed"</div>
+      <p style="font-size:15px;color:var(--ink-soft);margin-bottom:6px;">Target translation: <strong>"La orilla del río estaba cerrada"</strong></p>
+      <p style="font-size:14px;color:var(--ink3);margin-bottom:16px;">The encoder has already processed the English sentence (Section 7). Now the decoder generates Spanish, one word at a time. Let's trace <strong>Step 4</strong> — predicting the word after "La orilla del ___".</p>
+
+      <!-- CONTEXT -->
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:16px;border:1.5px solid var(--border);margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--ink);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🎬 Setup — Where We Are</div>
+        <div class="code" style="font-size:12px;">
+<span class="cm">// ENCODER already processed (from Section 7):</span><br>
+<span class="cm">// "The bank by the river was closed"</span><br>
+<span class="cm">// "bank" is fully disambiguated → river bank ✅</span><br><br>
+<span class="cm">// Encoder output vectors (K and V for cross-attention):</span><br>
+enc("The")    = [0.05, 0.08, 0.12, 0.04]<br>
+enc("bank")   = [<span class="mn">0.15, 0.82, 0.85, 0.30</span>]  <span class="cm">← river bank meaning</span><br>
+enc("river")  = [<span class="mn">0.10, 0.85, 0.90, 0.20</span>]  <span class="cm">← nature/water</span><br>
+enc("closed") = [<span class="mn">0.60, 0.30, 0.20, 0.70</span>]  <span class="cm">← shutdown state</span><br><br>
+<span class="cm">// DECODER has generated so far:</span><br>
+<span class="hi">"La"</span>  <span class="hi">"orilla"</span>  <span class="hi">"del"</span>  <span class="ro">???</span><br>
+ pos1   pos2      pos3   <span class="ro">← predicting this</span>
+        </div>
+      </div>
+
+      <!-- STEP 1: MASKED SELF-ATTENTION -->
+      <div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #c4b5fd;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--violet);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔒 Box 1 — Masked Multi-Head Self-Attention</div>
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:10px;">"del" attends to the decoder's own previous outputs — but <strong>cannot see future words</strong>.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Mask applied:</div>
+            <div class="code" style="font-size:12px;">
+<span class="cm">// "del" can only see:</span><br>
+La      ✅  score: 1.2<br>
+orilla  ✅  score: 3.8<br>
+del     ✅  score: 2.1<br>
+río     <span class="ro">❌  score: −∞</span> <span class="cm">(future)</span><br>
+estaba  <span class="ro">❌  score: −∞</span> <span class="cm">(future)</span><br>
+cerrada <span class="ro">❌  score: −∞</span> <span class="cm">(future)</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">After softmax (future → 0):</div>
+            <div class="code" style="font-size:12px;">
+La      <span class="ro">0.07</span>  ░<br>
+orilla  <span class="hi">0.65</span>  ████████ <span class="cm">← "del" relates to "orilla"</span><br>
+del     <span class="mn">0.28</span>  ████<br>
+río     <span class="ro">0.00</span>  <span class="cm">masked</span><br>
+estaba  <span class="ro">0.00</span>  <span class="cm">masked</span><br>
+cerrada <span class="ro">0.00</span>  <span class="cm">masked</span><br><br>
+del_masked = <span class="hi">[0.35, 0.71, 0.55, 0.22]</span>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-violet" style="margin-top:10px;">"del" learned it's connected to "orilla" (river bank/shore) — this is grammatical context. "del río" is a common Spanish phrase the model has seen millions of times.</div>
+      </div>
+
+      <!-- ADD & NORM 1 -->
+      <div style="background:var(--teal-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #5eead4;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--teal);font-size:12px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">➕ Add &amp; Norm (1st)</div>
+        <div class="code" style="font-size:12px;">
+del_enriched = LayerNorm( del_masked + del_original )<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = LayerNorm([0.35+0.30, 0.71+0.45, 0.55+0.50, 0.22+0.18])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span class="hi">[0.28, 0.68, 0.58, 0.15]</span>
+        </div>
+      </div>
+
+      <!-- STEP 2: CROSS-ATTENTION -->
+      <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #93c5fd;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🔗 Box 2 — Cross-Attention (Encoder ↔ Decoder)</div>
+        <p style="font-size:14px;color:var(--ink2);margin-bottom:10px;"><strong>Query</strong> comes from decoder ("del" enriched). <strong>Key &amp; Value</strong> come from encoder (full English sentence). No mask — decoder can see ALL encoder words.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Decoder Query × Encoder Keys:</div>
+            <div class="code" style="font-size:12px;">
+<span class="cm">// Q("del") searches encoder output</span><br><br>
+Q · K(The)    = <span class="ro">0.42</span><br>
+Q · K(bank)   = <span class="mn">3.15</span>  <span class="cm">← bank=river bank</span><br>
+Q · K(by)     = <span class="ro">0.88</span><br>
+Q · K(the)    = <span class="ro">0.35</span><br>
+Q · K(river)  = <span class="hi">3.91</span>  <span class="cm">← highest!</span><br>
+Q · K(was)    = <span class="ro">0.67</span><br>
+Q · K(closed) = <span class="mn">1.24</span>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">After scale + softmax:</div>
+            <div class="code" style="font-size:12px;">
+The     <span class="ro">0.02</span>  ░<br>
+bank    <span class="mn">0.25</span>  ████  <span class="cm">← "orilla" match</span><br>
+by      <span class="ro">0.03</span>  ░<br>
+the     <span class="ro">0.02</span>  ░<br>
+river   <span class="hi">0.55</span>  ████████ <span class="cm">← "río" match!</span><br>
+was     <span class="ro">0.03</span>  ░<br>
+closed  <span class="mn">0.10</span>  ██<br><br>
+<span class="cm">// Pulls mostly "river" information</span><br>
+del_cross = <span class="hi">[0.14, 0.81, 0.83, 0.25]</span>
+            </div>
+          </div>
+        </div>
+        <div class="callout callout-blue" style="margin-top:10px;">Cross-attention found that the decoder's current position aligns most with <strong>"river"</strong> in the encoder. The decoder now knows: the next Spanish word should relate to "river" → <strong>"río"</strong>.</div>
+      </div>
+
+      <!-- ADD & NORM 2 -->
+      <div style="background:var(--teal-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #5eead4;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--teal);font-size:12px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">➕ Add &amp; Norm (2nd)</div>
+        <div class="code" style="font-size:12px;">
+del_combined = LayerNorm( del_cross + del_enriched )<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span class="hi">[0.18, 0.79, 0.76, 0.19]</span> <span class="cm">← heavy "river" signal</span>
+        </div>
+      </div>
+
+      <!-- STEP 3: FFN -->
+      <div style="background:#fff7ed;border-radius:var(--r-sm);padding:16px;border:1.5px solid #fdba74;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--amber);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">⚡ Box 3 — Feed-Forward Network</div>
+        <div class="code" style="font-size:12px;">
+<span class="cm">// Two linear layers with ReLU, applied to this position only</span><br>
+hidden = ReLU( [0.18, 0.79, 0.76, 0.19] × W₁ + b₁ )<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = ReLU([0.45, 1.62, −0.30, 0.88, 1.41, −0.12, 0.93, 0.55])<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [0.45, 1.62, <span class="ro">0.00</span>, 0.88, 1.41, <span class="ro">0.00</span>, 0.93, 0.55] <span class="cm">← ReLU kills negatives</span><br><br>
+output = hidden × W₂ + b₂<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span class="hi">[0.12, 0.84, 0.81, 0.17]</span>
+        </div>
+        <div class="callout callout-amber" style="margin-top:8px;">FFN adds non-linearity — the model can now represent complex patterns that pure attention can't. The vector is refined but keeps its strong "river" signal.</div>
+      </div>
+
+      <!-- ADD & NORM 3 -->
+      <div style="background:var(--teal-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #5eead4;margin-bottom:14px;">
+        <div style="font-weight:700;color:var(--teal);font-size:12px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">➕ Add &amp; Norm (3rd)</div>
+        <div class="code" style="font-size:12px;">
+del_final = LayerNorm( ffn_output + del_combined )<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = <span class="hi">[0.13, 0.83, 0.80, 0.16]</span>
+        </div>
+      </div>
+
+      <!-- STEP 4: LINEAR + SOFTMAX -->
+      <div style="background:var(--ink);border-radius:var(--r-sm);padding:16px;border:1.5px solid var(--ink);margin-bottom:14px;">
+        <div style="font-weight:700;color:#86efac;font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">🎯 Box 4 — Linear + Softmax → Next Word</div>
+        <div class="code" style="font-size:12px;background:transparent;padding:0;margin:0;">
+<span class="cm">// Linear layer projects d=4 → vocabulary size (50,000 Spanish words)</span><br>
+logits = del_final × W_vocab + b_vocab<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; = [... , 1.2, ..., <span class="hi">8.9</span>, ..., 2.1, ..., 0.3, ...]<br>
+<span class="cm">//            ↑              ↑           ↑           ↑</span><br>
+<span class="cm">//         "agua"         "río"      "lago"      "mar"</span><br><br>
+
+<span class="cm">// Softmax → probability distribution over all 50,000 words:</span><br>
+P("río")    = <span class="hi">0.89</span>  ███████████  <span class="cm">← winner!</span><br>
+P("agua")   = <span class="mn">0.04</span>  █<br>
+P("lago")   = <span class="mn">0.03</span>  ░<br>
+P("mar")    = <span class="ro">0.01</span>  ░<br>
+P(others)   = <span class="ro">0.03</span>  ░<br><br>
+<span class="cm">// Decoder selects: </span><span class="hi">"río" ✅</span><br>
+<span class="cm">// "La orilla del" → "La orilla del río"</span>
+        </div>
+      </div>
+
+      <!-- FULL TRACE SUMMARY -->
+      <div style="background:var(--surface2);border-radius:var(--r-sm);padding:16px;border:1.5px solid var(--border);">
+        <div style="font-weight:700;color:var(--ink);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Complete Trace — The Vector Journey</div>
+        <div class="code" style="font-size:12px;">
+<span class="cm">// "del" vector at each stage:</span><br><br>
+Input embedding:        [0.30, 0.45, 0.50, 0.18]  <span class="cm">generic "del"</span><br>
+After masked self-attn: [0.35, 0.71, 0.55, 0.22]  <span class="cm">+ "orilla" context</span><br>
+After Add&amp;Norm 1:       [0.28, 0.68, 0.58, 0.15]  <span class="cm">stabilized</span><br>
+After cross-attention:  [0.14, 0.81, 0.83, 0.25]  <span class="cm">+ "river" from encoder</span><br>
+After Add&amp;Norm 2:       [0.18, 0.79, 0.76, 0.19]  <span class="cm">fused</span><br>
+After FFN:              [0.12, 0.84, 0.81, 0.17]  <span class="cm">refined</span><br>
+After Add&amp;Norm 3:       [<span class="hi">0.13, 0.83, 0.80, 0.16</span>]  <span class="cm">ready to predict</span><br><br>
+Linear + Softmax → <span class="hi">"río"</span> (89% probability) ✅
+        </div>
+      </div>
+
+      <div class="callout callout-blue" style="margin-top:14px;">
+        <strong>💡 The full decoder story:</strong> Masked self-attention said <em>"I've been writing about orilla (shore)"</em>. Cross-attention asked the encoder <em>"what English concept matches?"</em> and found <em>"river"</em>. The FFN refined the signal. Linear + Softmax converted it to a word prediction: <strong>"río"</strong> at 89%. Each box in the architecture diagram did exactly one job, and together they produced the right translation.
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ══════════════════════════════════════
