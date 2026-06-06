@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Srikanth Potukuchi — NLP &amp; ML Teaching Portal</title>
+<meta name="description" content="Interactive, visual teaching guides for NLP concepts — Word Embeddings, Transformers, Attention Mechanisms, and more. Created by MR-SRIKANTH.">
+<meta property="og:title" content="NLP Teaching Portal — Srikanth Potukuchi">
+<meta property="og:description" content="Interactive visual lectures on Word Embeddings, Transformers, Attention, and modern NLP.">
+<meta property="og:url" content="https://srikanth421.github.io/">
+<meta property="og:type" content="website">
+<link rel="canonical" href="https://srikanth421.github.io/">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700;9..144,800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  --ink:      #0c1222;
+  --ink-2:    #1e293b;
+  --ink-3:    #334155;
+  --ink-mute: #64748b;
+  --blue:     #1d4ed8;
+  --blue-mid: #3b82f6;
+  --blue-pale:#eff6ff;
+  --blue-soft:#dbeafe;
+  --teal:     #0d9488;
+  --amber:    #b45309;
+  --violet:   #6d28d9;
+  --surface:  #ffffff;
+  --surface-2:#f8fafc;
+  --border:   #e2e8f0;
+  --r:        16px;
+  --r-sm:     10px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body{
+  font-family:'Outfit',sans-serif;
+  background:#ffffff;
+  color:var(--ink);
+  font-size:16px;
+  line-height:1.7;
+  min-height:100vh;
+}
+
+/* ── HERO ── */
+.hero{
+  position:relative;
+  overflow:hidden;
+  background:var(--ink);
+  color:#fff;
+  padding:0 32px;
+  min-height:480px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 80%,rgba(29,78,216,.3) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 50% at 80% 20%,rgba(109,40,217,.2) 0%,transparent 55%),
+    radial-gradient(ellipse 50% 40% at 50% 50%,rgba(13,148,136,.12) 0%,transparent 50%);
+}
+/* animated grid pattern */
+.hero::after{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.03) 1px, transparent 1px);
+  background-size:48px 48px;
+  mask-image:radial-gradient(ellipse 70% 60% at 50% 50%,rgba(0,0,0,.5),transparent);
+}
+
+.hero-content{
+  position:relative;z-index:1;
+  max-width:780px;
+  text-align:center;
+  padding:64px 0;
+}
+
+.hero-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.15);
+  color:#93c5fd;
+  font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  padding:6px 18px;border-radius:999px;
+  margin-bottom:28px;
+  animation:fadeUp .7s ease both;
+}
+
+.hero h1{
+  font-family:'Fraunces',serif;
+  font-size:clamp(2.4rem,6vw,4rem);
+  font-weight:800;
+  line-height:1.1;
+  letter-spacing:-.02em;
+  margin-bottom:20px;
+  animation:fadeUp .7s ease .1s both;
+}
+.hero h1 .accent{
+  background:linear-gradient(135deg,#60a5fa 0%,#a78bfa 50%,#2dd4bf 100%);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+
+.hero-sub{
+  font-size:1.1rem;
+  color:#94a3b8;
+  max-width:560px;
+  margin:0 auto 36px;
+  line-height:1.65;
+  animation:fadeUp .7s ease .2s both;
+}
+
+.hero-meta{
+  display:flex;flex-wrap:wrap;gap:10px;justify-content:center;
+  animation:fadeUp .7s ease .3s both;
+}
+.meta-tag{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 16px;border-radius:999px;
+  font-size:13px;font-weight:500;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  color:#cbd5e1;
+}
+.meta-tag .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.dot-blue{background:#60a5fa;}
+.dot-teal{background:#2dd4bf;}
+.dot-amber{background:#fbbf24;}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(22px);}
+  to{opacity:1;transform:none;}
+}
+
+/* ── MAIN ── */
+main{
+  max-width:960px;
+  margin:0 auto;
+  padding:60px 28px 80px;
+}
+
+.section-label{
+  font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--blue);margin-bottom:14px;
+  display:flex;align-items:center;gap:10px;
+}
+.section-label::after{
+  content:'';flex:1;height:1.5px;
+  background:linear-gradient(90deg,var(--blue-soft),transparent);
+}
+
+.section-title{
+  font-family:'Fraunces',serif;
+  font-size:clamp(1.5rem,3.5vw,2rem);
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:32px;
+  line-height:1.25;
+}
+
+/* ── LECTURE CARDS ── */
+.lectures{display:grid;gap:24px;}
+
+.lecture-card{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:0;
+  border-radius:var(--r);
+  border:1.5px solid var(--border);
+  background:#fff;
+  overflow:hidden;
+  transition:transform .25s ease,box-shadow .25s ease;
+  text-decoration:none;
+  color:inherit;
+}
+.lecture-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 40px rgba(0,0,0,.08);
+  border-color:var(--blue-mid);
+}
+
+.card-accent{
+  width:6px;
+  border-radius:var(--r) 0 0 var(--r);
+}
+.accent-1{background:linear-gradient(180deg,#1d4ed8,#3b82f6);}
+.accent-2{background:linear-gradient(180deg,#6d28d9,#8b5cf6);}
+.accent-3{background:linear-gradient(180deg,#0d9488,#2dd4bf);}
+.accent-4{background:linear-gradient(180deg,#b45309,#f59e0b);}
+
+.card-body{padding:28px 28px 28px 24px;}
+
+.card-top{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:12px;flex-wrap:wrap;
+}
+
+.card-number{
+  font-family:'Fraunces',serif;
+  font-size:1.2rem;
+  font-weight:800;
+  color:#fff;
+  width:38px;height:38px;
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.num-1{background:var(--blue);}
+.num-2{background:var(--violet);}
+.num-3{background:var(--teal);}
+.num-4{background:var(--amber);}
+
+.card-badge{
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
+  padding:4px 12px;border-radius:999px;
+}
+.badge-live{background:#dcfce7;color:#15803d;border:1px solid #86efac;}
+.badge-soon{background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+.badge-new{background:#eff6ff;color:#1d4ed8;border:1px solid #93c5fd;}
+
+.card-title{
+  font-family:'Fraunces',serif;
+  font-size:1.25rem;
+  font-weight:700;
+  color:var(--ink);
+  margin-bottom:8px;
+  line-height:1.3;
+}
+.card-desc{
+  font-size:15px;
+  color:var(--ink-3);
+  margin-bottom:14px;
+  line-height:1.6;
+}
+
+.card-topics{
+  display:flex;flex-wrap:wrap;gap:6px;
+  margin-bottom:14px;
+}
+.topic{
+  font-size:12px;font-weight:500;
+  padding:4px 11px;border-radius:999px;
+  background:var(--surface-2);color:var(--ink-mute);
+  border:1px solid var(--border);
+}
+
+.card-cta{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:14px;font-weight:600;
+  color:var(--blue);
+  transition:gap .2s;
+}
+.lecture-card:hover .card-cta{gap:12px;}
+.card-cta-arrow{transition:transform .2s;}
+.lecture-card:hover .card-cta-arrow{transform:translateX(3px);}
+
+/* ── ABOUT SECTION ── */
+.about-section{
+  margin-top:72px;
+  padding-top:48px;
+  border-top:1.5px solid var(--border);
+}
+
+.about-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-top:8px;
+}
+@media(max-width:640px){.about-grid{grid-template-columns:1fr;}}
+
+.about-card{
+  border-radius:var(--r);
+  padding:24px;
+  border:1.5px solid var(--border);
+  background:#fff;
+}
+.about-card h3{
+  font-family:'Fraunces',serif;
+  font-size:1.05rem;
+  font-weight:700;
+  margin-bottom:8px;
+  display:flex;align-items:center;gap:8px;
+}
+.about-card p{
+  font-size:14.5px;
+  color:var(--ink-3);
+  line-height:1.6;
+}
+
+/* ── FOOTER ── */
+.site-footer{
+  background:var(--ink);
+  color:#64748b;
+  text-align:center;
+  padding:32px 24px;
+  font-size:13.5px;
+  margin-top:80px;
+}
+.site-footer strong{color:#e2e8f0;}
+.site-footer a{color:#93c5fd;text-decoration:none;}
+.site-footer a:hover{text-decoration:underline;}
+.footer-links{
+  display:flex;flex-wrap:wrap;gap:6px 20px;justify-content:center;
+  margin-top:12px;
+}
+
+/* ── SCROLL ANIMATION ── */
+.reveal{
+  opacity:0;transform:translateY(20px);
+  transition:opacity .55s ease,transform .55s ease;
+}
+.reveal.vis{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">📚 Open Teaching Resources</div>
+    <h1>NLP &amp; Machine Learning<br><span class="accent">Visual Lecture Guides</span></h1>
+    <p class="hero-sub">Interactive, production-quality teaching pages designed for classroom projection. Animated diagrams, worked examples, and real-world analogies — all in self-contained HTML files.</p>
+    <div class="hero-meta">
+      <span class="meta-tag"><span class="dot dot-blue"></span> Visual Explanations</span>
+      <span class="meta-tag"><span class="dot dot-teal"></span> Worked Examples</span>
+      <span class="meta-tag"><span class="dot dot-amber"></span> Real-World Analogies</span>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <div class="section-label">Available Lectures</div>
+  <h2 class="section-title">Interactive Teaching Guides</h2>
+
+  <div class="lectures">
+
+    <!-- LECTURE 1 -->
+    <a href="lectures/word-embeddings.html" class="lecture-card reveal">
+      <div class="card-accent accent-1"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-number num-1">1</div>
+          <span class="card-badge badge-live">Live</span>
+          <span class="card-badge badge-new">14 Sections</span>
+        </div>
+        <div class="card-title">Word Embeddings &amp; NLP Foundations</div>
+        <div class="card-desc">From one-hot encoding to Word2Vec, GloVe, FastText, and the evolution to modern NLP. Includes CBOW, Skip-Gram, Negative Sampling, Cosine Similarity, Porter Stemmer, article summarization pipeline, and a full representation evolution comparison.</div>
+        <div class="card-topics">
+          <span class="topic">One-Hot Encoding</span>
+          <span class="topic">Word2Vec</span>
+          <span class="topic">CBOW</span>
+          <span class="topic">Skip-Gram</span>
+          <span class="topic">GloVe</span>
+          <span class="topic">Cosine Similarity</span>
+          <span class="topic">Porter Stemmer</span>
+          <span class="topic">King−Man+Woman</span>
+          <span class="topic">FastText</span>
+          <span class="topic">BERT vs GPT</span>
+        </div>
+        <div class="card-cta">Open Interactive Lecture <span class="card-cta-arrow">→</span></div>
+      </div>
+    </a>
+
+    <!-- LECTURE 2 -->
+    <a href="lectures/transformers.html" class="lecture-card reveal">
+      <div class="card-accent accent-2"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-number num-2">2</div>
+          <span class="card-badge badge-live">Live</span>
+          <span class="card-badge badge-new">13 Sections</span>
+        </div>
+        <div class="card-title">Transformers &amp; Attention Mechanisms</div>
+        <div class="card-desc">From the Word2Vec order problem to the full Transformer architecture. Covers Self-Attention, Query-Key-Value, numerical worked examples, Multi-Head Attention, Encoder/Decoder blocks, Masking, BERT vs GPT comparison, and real-world applications.</div>
+        <div class="card-topics">
+          <span class="topic">Self-Attention</span>
+          <span class="topic">Q · K · V</span>
+          <span class="topic">Multi-Head Attention</span>
+          <span class="topic">Positional Encoding</span>
+          <span class="topic">Encoder</span>
+          <span class="topic">Decoder</span>
+          <span class="topic">Masking</span>
+          <span class="topic">BERT vs GPT</span>
+          <span class="topic">ChatGPT</span>
+        </div>
+        <div class="card-cta">Open Interactive Lecture <span class="card-cta-arrow">→</span></div>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- ABOUT -->
+  <div class="about-section reveal">
+    <div class="section-label">About This Project</div>
+    <h2 class="section-title">Teaching NLP Through Visual Intuition</h2>
+    <div class="about-grid">
+      <div class="about-card">
+        <h3>🎯 Teaching Philosophy</h3>
+        <p>Every concept is presented two ways: a precise technical explanation with formulas and worked examples on the left, and an everyday analogy with visual intuition on the right. Students who love math get rigor. Students who prefer stories get clarity. Everyone learns.</p>
+      </div>
+      <div class="about-card">
+        <h3>🛠 How to Use</h3>
+        <p>These pages are designed for projector/classroom display. Open any lecture in a browser — all animations trigger on scroll, all sections are navigable via the sticky top bar, and everything works offline with zero dependencies. Download and teach.</p>
+      </div>
+      <div class="about-card">
+        <h3>📁 Self-Contained HTML</h3>
+        <p>Each lecture is a single HTML file with embedded CSS and JavaScript. No frameworks, no build tools, no npm install. Save the file and open it — it works everywhere, forever.</p>
+      </div>
+      <div class="about-card">
+        <h3>👤 About the Author</h3>
+        <p>Created by <strong>Srikanth Potukuchi (MR-SRIKANTH)</strong> for teaching NLP and Machine Learning. Reach out at <a href="mailto:srikanth.potukuchi@gmail.com" style="color:var(--blue);">srikanth.potukuchi@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div><strong>NLP &amp; ML Teaching Portal</strong> — by <strong>MR-SRIKANTH</strong></div>
+  <div style="margin-top:6px;">srikanth.potukuchi@gmail.com &nbsp;·&nbsp; © 2025 All rights reserved</div>
+  <div class="footer-links">
+    <a href="lectures/word-embeddings.html">Lecture 1: Word Embeddings</a>
+    <a href="lectures/transformers.html">Lecture 2: Transformers</a>
+    <a href="https://github.com/srikanth421">GitHub</a>
+  </div>
+</footer>
+
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('vis'), i * 80);
+      obs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+</script>
+</body>
+</html>
