@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Transformers & Attention — Teaching Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Source+Sans+3:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  --ink:       #0d1117;
+  --ink-soft:  #374151;
+  --ink-mute:  #6b7280;
+  --blue:      #1d4ed8;
+  --blue-mid:  #3b82f6;
+  --blue-pale: #eff6ff;
+  --blue-soft: #dbeafe;
+  --teal:      #0d9488;
+  --teal-pale: #f0fdfa;
+  --amber:     #b45309;
+  --amber-pale:#fffbeb;
+  --rose:      #be123c;
+  --rose-pale: #fff1f2;
+  --violet:    #6d28d9;
+  --violet-pale:#f5f3ff;
+  --green:     #15803d;
+  --green-pale:#f0fdf4;
+  --surface:   #ffffff;
+  --surface-2: #f8fafc;
+  --border:    #e2e8f0;
+  --border-2:  #cbd5e1;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow:    0 4px 20px rgba(0,0,0,0.07);
+  --shadow-lg: 0 12px 48px rgba(0,0,0,0.10);
+  --r:         12px;
+  --r-sm:      7px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:'Source Sans 3',sans-serif;background:#fff;color:var(--ink);font-size:16px;line-height:1.7;}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg,#0d1117 0%,#1e3a8a 55%,#1d4ed8 100%);
+  color:#fff;padding:64px 40px 56px;text-align:center;position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 30% 70%,rgba(139,92,246,.18) 0%,transparent 55%),
+             radial-gradient(ellipse at 80% 20%,rgba(14,165,233,.14) 0%,transparent 50%);
+}
+.hero-inner{position:relative;max-width:900px;margin:0 auto;}
+.hero-badge{
+  display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:#bfdbfe;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:5px 16px;border-radius:999px;margin-bottom:20px;
+}
+.hero h1{
+  font-family:'Playfair Display',serif;font-size:clamp(2.2rem,5.5vw,3.8rem);
+  font-weight:700;line-height:1.12;margin-bottom:16px;letter-spacing:-.01em;
+}
+.hero h1 em{font-style:italic;color:#93c5fd;}
+.hero p{font-size:1.05rem;color:#bfdbfe;max-width:620px;margin:0 auto 28px;}
+.hero-prereqs{
+  display:flex;flex-wrap:wrap;gap:8px;justify-content:center;
+}
+.pre-tag{
+  padding:5px 14px;border-radius:999px;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.18);color:#e0f2fe;font-size:13px;font-weight:600;
+}
+.pre-tag.done{background:rgba(16,185,129,.18);border-color:rgba(16,185,129,.4);color:#6ee7b7;}
+
+/* ── NAV ── */
+.nav-bar{
+  background:#fff;border-bottom:1.5px solid var(--border);padding:11px 20px;
+  display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  position:sticky;top:0;z-index:200;
+}
+.nav-bar a{
+  font-size:12px;font-weight:600;color:var(--ink-mute);text-decoration:none;
+  padding:5px 12px;border-radius:999px;border:1px solid var(--border);
+  background:#fff;transition:all .18s;white-space:nowrap;
+}
+.nav-bar a:hover{background:var(--blue);color:#fff;border-color:var(--blue);}
+
+/* ── MAIN ── */
+main{max-width:1220px;margin:0 auto;padding:0 22px 80px;}
+
+/* ── SECTION ── */
+.section{
+  margin:60px 0;
+  opacity:0;transform:translateY(24px);
+  transition:opacity .55s ease,transform .55s ease;
+}
+.section.vis{opacity:1;transform:none;}
+
+.sec-head{
+  display:flex;align-items:center;gap:14px;
+  margin-bottom:28px;padding-bottom:16px;
+  border-bottom:2px solid var(--border);
+}
+.sec-num{
+  width:42px;height:42px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  font-family:'Playfair Display',serif;font-size:1.1rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.sec-head h2{
+  font-family:'Playfair Display',serif;font-size:clamp(1.3rem,3vw,1.8rem);
+  font-weight:700;color:var(--ink);
+}
+.sec-head h2 small{font-size:.7em;color:var(--ink-mute);font-family:'Source Sans 3',sans-serif;font-weight:400;}
+
+/* ── TWO-COL ── */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+.full{grid-column:1/-1;}
+@media(max-width:740px){.two-col{grid-template-columns:1fr;}}
+
+/* ── CARDS ── */
+.card{border-radius:var(--r);padding:24px;border:1.5px solid var(--border);background:#fff;box-shadow:var(--shadow-sm);}
+.card-tech{border-color:var(--border);}
+.card-analogy{background:var(--amber-pale);border-color:#fcd34d;}
+.card-visual{background:var(--blue-pale);border-color:#bfdbfe;}
+.card-violet{background:var(--violet-pale);border-color:#c4b5fd;}
+.card-teal{background:var(--teal-pale);border-color:#99f6e4;}
+.card-rose{background:var(--rose-pale);border-color:#fecdd3;}
+.card-green{background:var(--green-pale);border-color:#bbf7d0;}
+
+.lbl{
+  font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  margin-bottom:12px;
+}
+.lbl-tech{color:var(--blue);}
+.lbl-analogy{color:var(--amber);}
+.lbl-visual{color:#1d4ed8;}
+.lbl-violet{color:var(--violet);}
+.lbl-teal{color:var(--teal);}
+
+.card h3{
+  font-family:'Playfair Display',serif;font-size:1.1rem;
+  font-weight:700;margin-bottom:10px;color:var(--ink);
+}
+.card p{font-size:15px;color:var(--ink-soft);margin-bottom:9px;}
+.card p:last-child{margin-bottom:0;}
+.card ul{font-size:15px;color:var(--ink-soft);padding-left:18px;}
+.card ul li{margin-bottom:5px;}
+
+/* ── CODE ── */
+.code{
+  background:var(--ink);color:#e2e8f0;
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75;
+  border-radius:var(--r-sm);padding:15px 18px;overflow-x:auto;margin:10px 0;
+}
+.code .kw{color:#93c5fd;} .code .fn{color:#6ee7b7;} .code .cm{color:#475569;}
+.code .hi{color:#fde68a;font-weight:600;} .code .ro{color:#fca5a5;}
+
+/* ── CALLOUT ── */
+.callout{border-radius:var(--r-sm);padding:13px 17px;font-size:14.5px;margin:10px 0;}
+.callout-blue{background:var(--blue-soft);border-left:4px solid var(--blue);color:#1e3a8a;}
+.callout-amber{background:#fef3c7;border-left:4px solid #f59e0b;color:#78350f;}
+.callout-green{background:var(--green-pale);border-left:4px solid var(--green);color:#14532d;}
+.callout-rose{background:var(--rose-pale);border-left:4px solid #f43f5e;color:#881337;}
+.callout-violet{background:var(--violet-pale);border-left:4px solid var(--violet);color:#3b0764;}
+
+/* ── WORD CHIPS ── */
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.chip{
+  padding:6px 13px;border-radius:8px;
+  font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;
+  transition:transform .2s;cursor:default;
+}
+.chip:hover{transform:translateY(-2px);}
+.chip-b{background:var(--blue-soft);color:#1e40af;border:1.5px solid #93c5fd;}
+.chip-g{background:var(--green-pale);color:#166534;border:1.5px solid #86efac;}
+.chip-a{background:#fff7ed;color:#92400e;border:1.5px solid #fdba74;}
+.chip-v{background:var(--violet-pale);color:#5b21b6;border:1.5px solid #c4b5fd;}
+.chip-r{background:var(--rose-pale);color:#9f1239;border:1.5px solid #fca5a5;}
+.chip-t{background:var(--teal-pale);color:#134e4a;border:1.5px solid #5eead4;}
+
+/* ── VECTOR DISPLAY ── */
+.vec-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-family:'JetBrains Mono',monospace;font-size:13px;}
+.vec-word{min-width:64px;font-weight:600;color:var(--ink);}
+.vec-vals{display:flex;gap:4px;flex-wrap:wrap;}
+.val{padding:3px 8px;border-radius:4px;font-size:12px;font-weight:500;}
+.val-b{background:var(--blue-soft);color:#1e40af;}
+.val-g{background:var(--green-pale);color:#166534;}
+.val-r{background:var(--rose-pale);color:#9f1239;}
+
+/* ── FLOW ARROW ── */
+.flow{display:flex;flex-direction:column;align-items:center;gap:0;margin:12px auto;max-width:280px;}
+.flow-box{
+  width:100%;padding:10px 20px;border-radius:9px;font-weight:600;font-size:14px;
+  text-align:center;border:1.5px solid;
+  opacity:0;transform:translateX(-16px);
+  transition:opacity .4s ease,transform .4s ease;
+}
+.flow-box.show{opacity:1;transform:none;}
+.flow-box:hover{filter:brightness(1.03);}
+.flow-arr{font-size:18px;color:var(--blue-mid);line-height:1;padding:2px 0;}
+.fb-blue{background:var(--blue-soft);border-color:#93c5fd;color:#1e40af;}
+.fb-teal{background:var(--teal-pale);border-color:#99f6e4;color:#134e4a;}
+.fb-violet{background:var(--violet-pale);border-color:#c4b5fd;color:#4c1d95;}
+.fb-green{background:var(--green-pale);border-color:#86efac;color:#14532d;}
+.fb-amber{background:#fffbeb;border-color:#fcd34d;color:#78350f;}
+.fb-rose{background:var(--rose-pale);border-color:#fca5a5;color:#881337;}
+.fb-dark{background:var(--ink);border-color:var(--ink);color:#fff;}
+
+/* ── ATTENTION BARS ── */
+.attn-row{display:flex;align-items:center;gap:10px;margin:6px 0;}
+.attn-word{font-family:'JetBrains Mono',monospace;font-size:13px;min-width:80px;color:var(--ink-soft);}
+.attn-track{flex:1;height:24px;background:var(--surface-2);border-radius:5px;overflow:hidden;border:1px solid var(--border);}
+.attn-fill{
+  height:100%;border-radius:5px;
+  transition:width 1.3s cubic-bezier(.4,0,.2,1);
+  display:flex;align-items:center;padding-left:8px;
+  font-size:11.5px;font-weight:700;color:#fff;
+}
+.af-high{background:linear-gradient(90deg,#1d4ed8,#3b82f6);}
+.af-mid{background:linear-gradient(90deg,#0d9488,#2dd4bf);}
+.af-low{background:linear-gradient(90deg,#6b7280,#9ca3af);}
+.attn-val{font-family:'JetBrains Mono',monospace;font-size:12px;min-width:34px;color:var(--ink-mute);text-align:right;}
+
+/* ── TIMELINE ── */
+.tl-wrap{position:relative;margin:20px 0 10px;}
+.tl-line{position:absolute;left:50%;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--blue-soft),var(--blue));transform:translateX(-50%);}
+.tl-items{display:flex;flex-direction:column;gap:0;}
+.tl-item{
+  display:flex;align-items:center;gap:12px;
+  opacity:0;transform:translateY(12px);
+  transition:opacity .4s ease,transform .4s ease;
+  padding:5px 0;
+}
+.tl-item.show{opacity:1;transform:none;}
+.tl-item:nth-child(odd){flex-direction:row;}
+.tl-item:nth-child(even){flex-direction:row-reverse;}
+.tl-dot{
+  width:14px;height:14px;border-radius:50%;border:3px solid #fff;
+  box-shadow:0 0 0 2px var(--blue);background:var(--blue);
+  flex-shrink:0;z-index:1;margin:0 auto;
+}
+.tl-dot.current{background:var(--violet);box-shadow:0 0 0 2px var(--violet),0 0 12px rgba(109,40,217,.4);}
+.tl-label{
+  font-size:13px;font-weight:700;padding:5px 13px;border-radius:7px;
+  background:var(--blue-soft);color:var(--blue);border:1px solid #bfdbfe;
+  flex:1;text-align:center;max-width:160px;
+}
+.tl-label.cur-lbl{background:var(--violet-pale);color:var(--violet);border-color:#c4b5fd;}
+.tl-spacer{flex:1;max-width:160px;}
+
+/* ── QKV DIAGRAM ── */
+.qkv-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:14px 0;}
+.qkv-box{border-radius:var(--r-sm);padding:14px;text-align:center;}
+.qkv-q{background:#eff6ff;border:1.5px solid #93c5fd;}
+.qkv-k{background:#f0fdf4;border:1.5px solid #86efac;}
+.qkv-v{background:#fff7ed;border:1.5px solid #fdba74;}
+.qkv-box .qkv-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px;}
+.qkv-q .qkv-lbl{color:var(--blue);}
+.qkv-k .qkv-lbl{color:var(--green);}
+.qkv-v .qkv-lbl{color:var(--amber);}
+.qkv-box .qkv-word{font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;margin-bottom:4px;}
+.qkv-box p{font-size:12.5px;color:var(--ink-soft);}
+
+/* ── MATH ── */
+.math-box{
+  background:var(--ink);color:#e2e8f0;
+  font-family:'JetBrains Mono',monospace;font-size:13px;
+  border-radius:var(--r-sm);padding:16px 20px;
+  text-align:center;line-height:2.1;margin:12px 0;
+}
+.math-box .mh{color:#6ee7b7;font-weight:700;}
+.math-box .mn{color:#fde68a;}
+.math-box .ms{color:#fca5a5;}
+.math-box .mb{color:#c4b5fd;}
+
+/* ── COMPARISON TABLE ── */
+.cmp-table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0;}
+.cmp-table th{background:var(--ink);color:#fff;padding:10px 14px;text-align:left;font-weight:600;font-size:12.5px;}
+.cmp-table th:first-child{border-radius:8px 0 0 0;}
+.cmp-table th:last-child{border-radius:0 8px 0 0;}
+.cmp-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--ink-soft);vertical-align:top;}
+.cmp-table tr:nth-child(even) td{background:var(--surface-2);}
+.cmp-table .yes{color:var(--green);font-weight:700;}
+.cmp-table .no{color:var(--rose);font-weight:700;}
+
+/* ── APP CARDS ── */
+.app-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;margin:16px 0;}
+.app-card{
+  border-radius:var(--r);padding:20px 16px;text-align:center;
+  border:1.5px solid var(--border);background:#fff;
+  transition:transform .2s,box-shadow .2s;cursor:default;
+}
+.app-card:hover{transform:translateY(-4px);box-shadow:var(--shadow);}
+.app-icon{font-size:2.2rem;margin-bottom:10px;}
+.app-name{font-weight:700;font-size:14.5px;margin-bottom:5px;}
+.app-desc{font-size:12.5px;color:var(--ink-mute);line-height:1.5;}
+
+/* ── CHEAT SHEET ── */
+.cheat-table{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0;}
+.cheat-table th{background:var(--blue);color:#fff;padding:11px 14px;text-align:left;font-weight:600;font-size:12.5px;}
+.cheat-table th:first-child{border-radius:8px 0 0 0;}
+.cheat-table th:last-child{border-radius:0 8px 0 0;}
+.cheat-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--ink-soft);vertical-align:top;}
+.cheat-table tr:nth-child(even) td{background:var(--blue-pale);}
+.cheat-table td:first-child{font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--blue);font-size:13px;}
+.cheat-table td:nth-child(2){color:var(--ink);font-weight:500;}
+
+/* ── MULTI-HEAD ── */
+.heads-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;}
+.head-box{
+  border-radius:var(--r-sm);padding:13px 10px;text-align:center;font-size:13px;
+  font-weight:600;border:1.5px solid;transition:transform .2s;cursor:default;
+}
+.head-box:hover{transform:scale(1.04);}
+.hb1{background:#eff6ff;border-color:#93c5fd;color:#1e40af;}
+.hb2{background:var(--green-pale);border-color:#86efac;color:#166534;}
+.hb3{background:#fff7ed;border-color:#fdba74;color:#92400e;}
+.hb4{background:var(--violet-pale);border-color:#c4b5fd;color:#5b21b6;}
+.hb5{background:var(--rose-pale);border-color:#fca5a5;color:#9f1239;}
+.hb6{background:var(--teal-pale);border-color:#99f6e4;color:#134e4a;}
+.hb7{background:#fdf4ff;border-color:#e879f9;color:#701a75;}
+.hb8{background:#fff9db;border-color:#fbbf24;color:#713f12;}
+
+/* ── ARCH DIAGRAM ── */
+.arch-box{
+  border-radius:var(--r-sm);padding:11px 18px;text-align:center;font-size:14px;
+  font-weight:600;margin:2px 0;border:1.5px solid;
+  transition:background .25s;cursor:default;
+}
+.arch-box:hover{filter:brightness(1.05);}
+
+/* ── POSITION DEMO ── */
+.pos-demo{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0;align-items:flex-end;}
+.pos-word{text-align:center;}
+.pos-token{padding:8px 14px;border-radius:8px 8px 0 0;font-family:'JetBrains Mono',monospace;font-weight:600;font-size:13px;}
+.pos-num{font-size:11px;font-weight:700;color:var(--ink-mute);text-align:center;padding:4px 0;border-radius:0 0 6px 6px;background:var(--surface-2);border:1px solid var(--border);}
+
+/* ── MASK DEMO ── */
+.mask-grid{display:grid;gap:5px;margin:14px 0;}
+.mask-row{display:flex;gap:5px;}
+.mask-cell{
+  width:52px;height:36px;border-radius:5px;font-size:12px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  font-family:'JetBrains Mono',monospace;
+}
+.mc-vis{background:var(--green-pale);color:#166534;border:1px solid #86efac;}
+.mc-hid{background:var(--rose-pale);color:#9f1239;border:1px solid #fca5a5;}
+.mc-hdr{background:var(--ink);color:#fff;font-size:11px;border-radius:5px;}
+
+/* ── ENCODER BLOCK ── */
+.enc-block{
+  border:2px solid var(--blue);border-radius:var(--r);padding:18px;
+  background:var(--blue-pale);margin:12px 0;
+}
+.enc-block .enc-title{
+  font-family:'Playfair Display',serif;font-size:1rem;font-weight:700;
+  color:var(--blue);margin-bottom:12px;text-align:center;
+}
+
+/* ── WATERMARK ── */
+.wm-footer{
+  background:var(--ink);color:#64748b;text-align:center;
+  padding:26px;font-size:13px;border-top:3px solid var(--blue);
+}
+.wm-footer strong{color:#e2e8f0;}
+
+/* ── SCROLL ANIMATION ── */
+.fade-up{opacity:0;transform:translateY(16px);transition:opacity .45s ease,transform .45s ease;}
+.fade-up.show{opacity:1;transform:none;}
+</style>
+</head>
+<body>
+
+<!-- ── HERO ── -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">Lecture 2 — NLP Series</div>
+    <h1>Transformers &amp; <em>Attention</em> Mechanisms</h1>
+    <p>From the problem with Word2Vec to ChatGPT — a beginner-friendly deep-dive with analogies, worked examples, and interactive visuals.</p>
+    <div class="hero-prereqs">
+      <span class="pre-tag done">✓ Bag of Words</span>
+      <span class="pre-tag done">✓ TF-IDF</span>
+      <span class="pre-tag done">✓ Word2Vec</span>
+      <span class="pre-tag done">✓ GloVe</span>
+      <span class="pre-tag done">✓ FastText</span>
+      <span class="pre-tag">→ Transformers (today)</span>
+    </div>
+  </div>
+</header>
+
+<!-- ── NAV ── -->
+<nav class="nav-bar">
+  <a href="#s0">Why Transformers?</a>
+  <a href="#s1">Overview</a>
+  <a href="#s2">Positional Encoding</a>
+  <a href="#s3">Self-Attention</a>
+  <a href="#s4">Q · K · V</a>
+  <a href="#s5">Calculation</a>
+  <a href="#s6">Multi-Head</a>
+  <a href="#s7">Encoder</a>
+  <a href="#s8">Decoder</a>
+  <a href="#s9">Masking</a>
+  <a href="#s10">BERT vs GPT</a>
+  <a href="#s11">Applications</a>
+  <a href="#s12">Cheat Sheet</a>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════
+     SECTION 0 — WHY TRANSFORMERS?
+══════════════════════════════════════ -->
+<section class="section" id="s0">
+  <div class="sec-head">
+    <div class="sec-num">0</div>
+    <h2>Why Were Transformers Needed? <small>The problem with what you already know</small></h2>
+  </div>
+
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ The Core Problem</div>
+      <p>Word2Vec, GloVe, and FastText produce <strong>static word embeddings</strong>. Each word gets one fixed vector — but to represent a whole sentence, you average all vectors together.</p>
+      <p><strong>Averaging is commutative:</strong></p>
+      <div class="code">
+<span class="kw">A</span> + <span class="kw">B</span> + <span class="kw">C</span> &nbsp;= <span class="hi">same result</span> as<br>
+<span class="kw">C</span> + <span class="kw">B</span> + <span class="kw">A</span>
+      </div>
+      <p>So these two sentences produce <strong>identical vectors</strong>:</p>
+      <div style="margin:12px 0;">
+        <div class="chips"><span class="chip chip-b">dog</span><span class="chip chip-a">bites</span><span class="chip chip-v">man</span><span style="font-size:13px;color:var(--ink-mute);padding:6px 4px;">→ avg = </span><span class="chip chip-g">[0.55, 0.61]</span></div>
+        <div class="chips"><span class="chip chip-v">man</span><span class="chip chip-a">bites</span><span class="chip chip-b">dog</span><span style="font-size:13px;color:var(--ink-mute);padding:6px 4px;">→ avg = </span><span class="chip chip-g">[0.55, 0.61]</span></div>
+      </div>
+      <div class="callout callout-rose">🚫 The model cannot tell who bit whom. Word order is invisible.</div>
+      <p style="margin-top:10px;font-size:14.5px;color:var(--ink-soft);">Also: Word2Vec gives "bank" the same vector in "river bank" and "bank loan". Context is ignored completely.</p>
+    </div>
+
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>A Bag of Scrabble Tiles</h3>
+      <p>Imagine tipping the words of a sentence into a bag and shaking it up. You lose all sense of order.</p>
+      <p>"The chef cooked the fish" and "The fish cooked the chef" become the same bag — same tiles, different meaning, different meal.</p>
+      <p><strong>Word2Vec is that bag.</strong> Rich word meaning, zero sentence structure.</p>
+      <div class="callout callout-amber">
+        💡 This is the gap Transformers were designed to fill: <strong>meaning + order + context</strong>, all at once.
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card full" style="margin-top:18px;">
+    <div class="lbl lbl-tech">📅 The Road to Transformers</div>
+    <div class="tl-wrap" id="tlWrap">
+      <div class="tl-line"></div>
+      <div class="tl-items" id="tlItems">
+        <div class="tl-item"><div class="tl-label">Bag of Words</div><div class="tl-dot"></div><div class="tl-spacer"></div></div>
+        <div class="tl-item"><div class="tl-spacer"></div><div class="tl-dot"></div><div class="tl-label">TF-IDF</div></div>
+        <div class="tl-item"><div class="tl-label">Word2Vec / GloVe</div><div class="tl-dot"></div><div class="tl-spacer"></div></div>
+        <div class="tl-item"><div class="tl-spacer"></div><div class="tl-dot"></div><div class="tl-label">LSTM / RNN</div></div>
+        <div class="tl-item"><div class="tl-label">Attention (2015)</div><div class="tl-dot"></div><div class="tl-spacer"></div></div>
+        <div class="tl-item"><div class="tl-spacer"></div><div class="tl-dot current"></div><div class="tl-label cur-lbl">Transformers (2017)</div></div>
+        <div class="tl-item"><div class="tl-label">BERT (2018)</div><div class="tl-dot current"></div><div class="tl-spacer"></div></div>
+        <div class="tl-item"><div class="tl-spacer"></div><div class="tl-dot current"></div><div class="tl-label cur-lbl">GPT-3 (2020)</div></div>
+        <div class="tl-item"><div class="tl-label">ChatGPT (2022)</div><div class="tl-dot current"></div><div class="tl-spacer"></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 1 — TRANSFORMER OVERVIEW
+══════════════════════════════════════ -->
+<section class="section" id="s1">
+  <div class="sec-head">
+    <div class="sec-num">1</div>
+    <h2>Transformer Overview <small>The big picture</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ What Is a Transformer?</div>
+      <p>A Transformer is a neural network architecture built entirely on <strong>attention mechanisms</strong> — no recurrence, no convolutions.</p>
+      <p>It has two main parts:</p>
+      <ul style="margin:8px 0 12px;">
+        <li><strong>Encoder</strong> — reads and understands the input</li>
+        <li><strong>Decoder</strong> — generates the output</li>
+      </ul>
+      <div class="flow" id="flowOverview">
+        <div class="flow-box fb-blue">📥 Input Sentence</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-teal">🔡 Word Embeddings + Position</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-violet">🧠 Encoder (understand)</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-amber">💡 Context Vector</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-green">✍ Decoder (generate)</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-dark">📤 Output Sentence</div>
+      </div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>The Human Translator</h3>
+      <p>Imagine a professional translator working on a Spanish document:</p>
+      <ol style="padding-left:18px;font-size:15px;color:var(--ink-soft);">
+        <li style="margin-bottom:8px;"><strong>Read</strong> the full English sentence, holding the entire meaning in mind</li>
+        <li style="margin-bottom:8px;"><strong>Understand</strong> not just words, but tone, context, and relationships</li>
+        <li style="margin-bottom:8px;"><strong>Generate</strong> the Spanish translation one word at a time, referencing understanding</li>
+      </ol>
+      <div style="margin-top:14px;background:#fff;border-radius:var(--r-sm);padding:16px;border:1.5px solid var(--border);">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--ink-soft);">
+          <div style="color:var(--blue);font-weight:700;margin-bottom:6px;">Input (English):</div>
+          "The cat sat on the wall"
+          <div style="color:var(--green);font-weight:700;margin:10px 0 6px;">Output (Spanish):</div>
+          "El gato se sentó en la pared"
+        </div>
+      </div>
+      <div class="callout callout-blue" style="margin-top:12px;">Key insight: the translator doesn't just look up each word. They understand the whole sentence first — that's what the Encoder does.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 2 — POSITIONAL ENCODING
+══════════════════════════════════════ -->
+<section class="section" id="s2">
+  <div class="sec-head">
+    <div class="sec-num">2</div>
+    <h2>Positional Encoding <small>Teaching the model word order</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Technical</div>
+      <p>Attention mechanisms process all words <strong>simultaneously</strong> — they have no built-in sense of order. Positional Encoding fixes this by adding a unique position signal to each word's embedding.</p>
+      <div class="math-box">
+        <span class="mh">PE</span>(pos, 2i) &nbsp;= sin(pos / 10000<span class="mn">^(2i/d)</span>)<br>
+        <span class="mh">PE</span>(pos, 2i+1) = cos(pos / 10000<span class="mn">^(2i/d)</span>)<br><br>
+        <span class="cm">// d = embedding dimension, pos = word position</span>
+      </div>
+      <p>The final input to the transformer is:</p>
+      <div class="code"><span class="hi">Input</span> = Word Embedding + Positional Encoding</div>
+      <p style="font-size:14.5px;color:var(--ink-soft);margin-top:10px;">Now "dog" at position 1 has a <em>different combined vector</em> than "dog" at position 3. Order is preserved.</p>
+      <div style="margin:14px 0;">
+        <div style="font-size:13px;font-weight:700;color:var(--ink-mute);margin-bottom:8px;">With positional encoding:</div>
+        <div class="pos-demo">
+          <div class="pos-word"><div class="pos-token chip-b">dog</div><div class="pos-num">pos 1</div></div>
+          <div class="pos-word"><div class="pos-token chip-a">bites</div><div class="pos-num">pos 2</div></div>
+          <div class="pos-word"><div class="pos-token chip-v">man</div><div class="pos-num">pos 3</div></div>
+          <span style="font-size:18px;color:var(--blue-mid);padding-bottom:8px;">≠</span>
+          <div class="pos-word"><div class="pos-token chip-v">man</div><div class="pos-num">pos 1</div></div>
+          <div class="pos-word"><div class="pos-token chip-a">bites</div><div class="pos-num">pos 2</div></div>
+          <div class="pos-word"><div class="pos-token chip-b">dog</div><div class="pos-num">pos 3</div></div>
+        </div>
+      </div>
+      <div class="callout callout-green">✅ Now the model can distinguish "dog bites man" from "man bites dog" — different vectors, different meaning.</div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>Movie Theatre Seating</h3>
+      <p>Imagine five friends at a movie theatre. The friends are the <strong>words</strong>. Their seats are the <strong>positions</strong>.</p>
+      <p>Alice sits in seat 1. Bob sits in seat 5. Same people — completely different experiences based on where they sit. Alice is near the screen; Bob is at the back.</p>
+      <div style="background:#fff;border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);margin:12px 0;">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;font-size:12.5px;">
+          <div><div style="background:var(--blue-soft);border-radius:6px;padding:8px 4px;font-weight:700;color:var(--blue);">🐕 dog</div><div style="color:var(--ink-mute);font-size:11px;margin-top:3px;">Seat 1</div></div>
+          <div><div style="background:#fff7ed;border-radius:6px;padding:8px 4px;font-weight:700;color:var(--amber);">👊 bites</div><div style="color:var(--ink-mute);font-size:11px;margin-top:3px;">Seat 2</div></div>
+          <div><div style="background:var(--violet-pale);border-radius:6px;padding:8px 4px;font-weight:700;color:var(--violet);">🧑 man</div><div style="color:var(--ink-mute);font-size:11px;margin-top:3px;">Seat 3</div></div>
+        </div>
+        <div style="text-align:center;margin:8px 0;font-size:13px;font-weight:700;color:var(--ink-mute);">≠</div>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;text-align:center;font-size:12.5px;">
+          <div><div style="background:var(--violet-pale);border-radius:6px;padding:8px 4px;font-weight:700;color:var(--violet);">🧑 man</div><div style="color:var(--ink-mute);font-size:11px;margin-top:3px;">Seat 1</div></div>
+          <div><div style="background:#fff7ed;border-radius:6px;padding:8px 4px;font-weight:700;color:var(--amber);">👊 bites</div><div style="color:var(--ink-mute);font-size:11px;margin-top:3px;">Seat 2</div></div>
+          <div><div style="background:var(--blue-soft);border-radius:6px;padding:8px 4px;font-weight:700;color:var(--blue);">🐕 dog</div><div style="color:var(--ink-mute);font-size:11px;margin-top:3px;">Seat 3</div></div>
+        </div>
+      </div>
+      <p>Word = person &nbsp;|&nbsp; Position encoding = seat number tag</p>
+      <p>The model now knows <em>who is where</em>, not just who is present.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 3 — SELF-ATTENTION
+══════════════════════════════════════ -->
+<section class="section" id="s3">
+  <div class="sec-head">
+    <div class="sec-num">3</div>
+    <h2>Self-Attention <small>Every word looks at every other word</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Technical</div>
+      <p>In self-attention, <strong>each word computes a weighted relationship with every other word</strong> in the sentence — including itself. The output is a context-aware representation.</p>
+      <p>Example sentence:</p>
+      <div class="chips">
+        <span class="chip chip-b">The</span><span class="chip chip-g">cat</span><span class="chip chip-b">sat</span>
+        <span class="chip chip-b">on</span><span class="chip chip-b">the</span><span class="chip chip-a">wall</span>
+        <span class="chip chip-b">because</span><span class="chip chip-v">it</span><span class="chip chip-b">was</span><span class="chip chip-r">tired</span>
+      </div>
+      <p style="margin-top:12px;"><strong>Question:</strong> What does "<span style="color:var(--violet);font-weight:700;">it</span>" refer to?</p>
+      <p>Self-attention calculates how much each word should influence the meaning of "<em>it</em>". The model learns that <strong>cat</strong> is most relevant:</p>
+      <div id="attnBars" style="margin-top:14px;">
+        <div class="attn-row"><span class="attn-word">The</span><div class="attn-track"><div class="attn-fill af-low" style="width:0%" data-w="5%">0.05</div></div><span class="attn-val">0.05</span></div>
+        <div class="attn-row"><span class="attn-word">cat</span><div class="attn-track"><div class="attn-fill af-high" style="width:0%" data-w="70%">0.70 ★</div></div><span class="attn-val">0.70</span></div>
+        <div class="attn-row"><span class="attn-word">sat</span><div class="attn-track"><div class="attn-fill af-low" style="width:0%" data-w="8%">0.08</div></div><span class="attn-val">0.08</span></div>
+        <div class="attn-row"><span class="attn-word">on</span><div class="attn-track"><div class="attn-fill af-low" style="width:0%" data-w="2%">0.02</div></div><span class="attn-val">0.02</span></div>
+        <div class="attn-row"><span class="attn-word">wall</span><div class="attn-track"><div class="attn-fill af-mid" style="width:0%" data-w="12%">0.12</div></div><span class="attn-val">0.12</span></div>
+        <div class="attn-row"><span class="attn-word">tired</span><div class="attn-track"><div class="attn-fill af-mid" style="width:0%" data-w="3%">0.03</div></div><span class="attn-val">0.03</span></div>
+      </div>
+      <div class="callout callout-blue" style="margin-top:12px;">✅ Self-attention resolved "it" → "cat". The vector for "it" now carries information from "cat".</div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>The Detective Solving a Mystery</h3>
+      <p>A great detective doesn't hear one clue in isolation. When they encounter the word <strong>"it"</strong>, they immediately scan <em>every previous clue</em> in the case file looking for what "it" refers to.</p>
+      <div style="background:#fff;border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);margin:12px 0;font-size:14px;color:var(--ink-soft);">
+        <div style="font-weight:700;color:var(--ink);margin-bottom:8px;">🔍 Detective's Notebook:</div>
+        <div style="margin-bottom:5px;">Clue 1 — "The cat" &nbsp;→ &nbsp;<strong style="color:var(--green);">Strong lead ★★★</strong></div>
+        <div style="margin-bottom:5px;">Clue 2 — "the wall" &nbsp;→ &nbsp;<span style="color:var(--amber);">Possible ★★</span></div>
+        <div style="margin-bottom:5px;">Clue 3 — "sat, on, the" &nbsp;→ &nbsp;<span style="color:var(--ink-mute);">Weak ★</span></div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-weight:700;color:var(--blue);">Conclusion: "it" = the cat (70% confidence)</div>
+      </div>
+      <p>Self-attention is that detective. For every word, it scores how relevant every other word is — then uses those scores to build a richer, context-aware understanding.</p>
+      <div class="callout callout-amber">💡 Key insight: Word2Vec gives "it" a single fixed vector. Self-attention gives "it" a <em>different</em> vector in every sentence, depending on context.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 4 — Q K V
+══════════════════════════════════════ -->
+<section class="section" id="s4">
+  <div class="sec-head">
+    <div class="sec-num">4</div>
+    <h2>Query · Key · Value <small>The mechanism behind self-attention</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Technical</div>
+      <div class="qkv-grid">
+        <div class="qkv-box qkv-q"><div class="qkv-lbl">Query (Q)</div><div class="qkv-word">❓ Seeker</div><p>What am I looking for?<br>Current word's question</p></div>
+        <div class="qkv-box qkv-k"><div class="qkv-lbl">Key (K)</div><div class="qkv-word">🏷 Label</div><p>What do I contain?<br>Every word's identity tag</p></div>
+        <div class="qkv-box qkv-v"><div class="qkv-lbl">Value (V)</div><div class="qkv-word">📦 Content</div><p>What can I provide?<br>The actual information</p></div>
+      </div>
+      <p style="margin-top:12px;">The attention flow:</p>
+      <div class="flow" id="flowQKV">
+        <div class="flow-box fb-blue">Query × Key → Raw Score</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-teal">÷ √d (scale)</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-violet">Softmax → Attention Weights</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-amber">Weights × Values</div>
+        <div class="flow-arr">↓</div>
+        <div class="flow-box fb-green">Context Vector Output</div>
+      </div>
+      <div class="math-box" style="margin-top:12px;">
+        Attention(Q, K, V) = softmax( <span class="mh">QK</span><span class="ms">ᵀ</span> / <span class="mn">√d_k</span> ) · <span class="mb">V</span>
+      </div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>Restaurant Recommendation System</h3>
+      <p>You walk into a food court and think: <em>"I want something spicy."</em></p>
+      <div style="background:#fff;border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);margin:12px 0;">
+        <div style="font-size:13px;margin-bottom:10px;"><span style="font-weight:700;color:var(--blue);">Your Query:</span> "I want spicy food"</div>
+        <div style="font-size:13px;margin-bottom:8px;font-weight:700;color:var(--green);">Restaurant Keys (their labels):</div>
+        <div class="attn-row"><span class="attn-word">Pizza</span><div class="attn-track"><div class="attn-fill af-low" style="width:15%"></div></div><span class="attn-val">0.10</span></div>
+        <div class="attn-row"><span class="attn-word">Burger</span><div class="attn-track"><div class="attn-fill af-low" style="width:10%"></div></div><span class="attn-val">0.07</span></div>
+        <div class="attn-row"><span class="attn-word">Thai Curry</span><div class="attn-track"><div class="attn-fill af-high" style="width:80%"></div></div><span class="attn-val">0.75 ★</span></div>
+        <div class="attn-row"><span class="attn-word">Salad</span><div class="attn-track"><div class="attn-fill af-low" style="width:10%"></div></div><span class="attn-val">0.08</span></div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);font-size:13px;">
+          <span style="font-weight:700;color:var(--amber);">Value returned:</span> Thai Curry menu, price, table number
+        </div>
+      </div>
+      <ul style="font-size:14.5px;color:var(--ink-soft);">
+        <li><strong>Q</strong> = your craving ("spicy food")</li>
+        <li><strong>K</strong> = each restaurant's label/description</li>
+        <li><strong>V</strong> = the actual dish information you receive</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 5 — ATTENTION CALCULATION
+══════════════════════════════════════ -->
+<section class="section" id="s5">
+  <div class="sec-head">
+    <div class="sec-num">5</div>
+    <h2>Attention Calculation <small>A numerical worked example</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech full">
+      <div class="lbl lbl-tech">⚙ Step-by-Step Calculation</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-top:10px;">
+
+        <div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #bfdbfe;">
+          <div style="font-weight:700;color:var(--blue);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Step 1 — Inputs</div>
+          <div class="code" style="font-size:12px;">
+Query = [<span class="hi">1</span>, <span class="hi">2</span>]<br><br>
+Key₁  = [<span class="mn">1</span>, <span class="mn">1</span>]  <span class="cm">← Word 1</span><br>
+Key₂  = [<span class="mn">3</span>, <span class="mn">4</span>]  <span class="cm">← Word 2</span>
+          </div>
+        </div>
+
+        <div style="background:var(--green-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #86efac;">
+          <div style="font-weight:700;color:var(--green);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Step 2 — Dot Products</div>
+          <div class="code" style="font-size:12px;">
+Q · K₁ = (1×1) + (2×1) = <span class="hi">3</span><br>
+Q · K₂ = (1×3) + (2×4) = <span class="hi">11</span><br><br>
+<span class="cm">// Divide by √d_k = √2 ≈ 1.41</span><br>
+Score₁ = 3  / 1.41 = <span class="fn">2.12</span><br>
+Score₂ = 11 / 1.41 = <span class="fn">7.80</span>
+          </div>
+        </div>
+
+        <div style="background:#fff7ed;border-radius:var(--r-sm);padding:16px;border:1.5px solid #fdba74;">
+          <div style="font-weight:700;color:var(--amber);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Step 3 — Softmax</div>
+          <div class="code" style="font-size:12px;">
+e^2.12 = 8.33<br>
+e^7.80 = 2440.6<br>
+Total  = 2448.9<br><br>
+Weight₁ = 8.33 / 2448.9 = <span class="ro">0.003</span><br>
+Weight₂ = 2440 / 2448.9 = <span class="hi">0.997</span>
+          </div>
+        </div>
+
+        <div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #c4b5fd;">
+          <div style="font-weight:700;color:var(--violet);font-size:13px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">Step 4 — Weighted Values</div>
+          <div class="code" style="font-size:12px;">
+Value₁ = [1, 0] × 0.003 = [0.003, 0]<br>
+Value₂ = [0, 1] × 0.997 = [0, 0.997]<br><br>
+<span class="cm">// Sum = final output</span><br>
+Output = <span class="hi">[0.003, 0.997]</span><br><br>
+<span class="cm">// Word 2 dominated! (7.80 >> 2.12)</span>
+          </div>
+        </div>
+      </div>
+      <div class="callout callout-blue" style="margin-top:14px;">
+        📊 <strong>What this means:</strong> The Query was most similar to Key₂ (dot product 11 vs 3), so the output is almost entirely shaped by Value₂. Softmax sharpens this into near-certainty.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 6 — MULTI-HEAD ATTENTION
+══════════════════════════════════════ -->
+<section class="section" id="s6">
+  <div class="sec-head">
+    <div class="sec-num">6</div>
+    <h2>Multi-Head Attention <small>Many perspectives at once</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Technical</div>
+      <p>Instead of one attention computation, run <strong>multiple attention heads in parallel</strong>, each learning different relationships.</p>
+      <div class="code">
+h = <span class="hi">8</span> heads &nbsp;&nbsp;&nbsp;<span class="cm">// typical in base Transformer</span><br>
+d = <span class="hi">512</span> total dimensions<br>
+d_head = 512 / 8 = <span class="fn">64</span> per head<br><br>
+Output = <span class="hi">Concat</span>(head₁, …, head₈) × W°<br>
+       = [64×8] = <span class="hi">512</span> dimensions
+      </div>
+      <p style="margin-top:12px;">Each head independently learns to attend to different patterns:</p>
+      <div class="heads-grid">
+        <div class="head-box hb1">🔵 Head 1<br><small>Subject-Verb</small></div>
+        <div class="head-box hb2">🟢 Head 2<br><small>Pronouns</small></div>
+        <div class="head-box hb3">🟠 Head 3<br><small>Sentiment</small></div>
+        <div class="head-box hb4">🟣 Head 4<br><small>Topic</small></div>
+        <div class="head-box hb5">🔴 Head 5<br><small>Negation</small></div>
+        <div class="head-box hb6">🩵 Head 6<br><small>Tense</small></div>
+        <div class="head-box hb7">🪻 Head 7<br><small>Entities</small></div>
+        <div class="head-box hb8">🟡 Head 8<br><small>Coreference</small></div>
+      </div>
+      <div class="callout callout-violet">All 8 outputs are concatenated → projected → one rich representation</div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>The Crime Investigation Team</h3>
+      <p>One detective might miss something. A great police department sends a <strong>whole team</strong>, each specializing in a different angle:</p>
+      <div style="display:flex;flex-direction:column;gap:8px;margin:12px 0;">
+        <div style="background:#fff;border-radius:var(--r-sm);padding:10px 14px;border:1.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🔵</span><div><strong>Grammar Detective</strong> — finds who is the subject</div></div>
+        <div style="background:#fff;border-radius:var(--r-sm);padding:10px 14px;border:1.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🟢</span><div><strong>Pronoun Detective</strong> — resolves "it", "he", "they"</div></div>
+        <div style="background:#fff;border-radius:var(--r-sm);padding:10px 14px;border:1.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🟠</span><div><strong>Sentiment Detective</strong> — positive, negative, neutral?</div></div>
+        <div style="background:#fff;border-radius:var(--r-sm);padding:10px 14px;border:1.5px solid var(--border);font-size:14px;display:flex;align-items:center;gap:10px;"><span style="font-size:1.3rem;">🟣</span><div><strong>Topic Detective</strong> — is this about sports? Finance?</div></div>
+      </div>
+      <p>After each detective files their report, the chief <strong>combines all findings</strong> into one comprehensive understanding. That's concatenation + projection.</p>
+      <div class="callout callout-amber">💡 One attention head would make one guess. Eight heads together build a 360° understanding of every sentence.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 7 — ENCODER BLOCK
+══════════════════════════════════════ -->
+<section class="section" id="s7">
+  <div class="sec-head">
+    <div class="sec-num">7</div>
+    <h2>Encoder Block <small>How understanding is built</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Architecture</div>
+      <p>One encoder block repeats <strong>N times</strong> (N=6 in original Transformer). Each pass deepens understanding:</p>
+      <div class="enc-block">
+        <div class="enc-title">Encoder Block (×6)</div>
+        <div class="flow">
+          <div class="flow-box fb-blue show">📥 Input Embeddings + Position</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-violet show">🧠 Multi-Head Self-Attention</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-teal show">➕ Add &amp; Norm (Residual)</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-amber show">⚡ Feed-Forward Network</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-teal show">➕ Add &amp; Norm (Residual)</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-green show">📤 Enriched Representation</div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <p style="font-weight:700;color:var(--ink);font-size:15px;margin-bottom:8px;">Key components explained:</p>
+        <div class="callout callout-violet" style="margin-bottom:8px;"><strong>Residual Connection (Add):</strong> Output = Layer(x) + x. Passes original input alongside transformed version — prevents gradient vanishing.</div>
+        <div class="callout callout-teal" style="margin-bottom:8px;background:var(--teal-pale);border-color:var(--teal);color:#134e4a;"><strong>Layer Norm:</strong> Normalises values to have mean≈0, std≈1. Keeps training stable.</div>
+        <div class="callout callout-blue"><strong>Feed-Forward Network:</strong> Two linear layers with ReLU. Adds non-linearity — the model can learn complex patterns.</div>
+      </div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>Reading a Novel Six Times</h3>
+      <p>Imagine reading a complex novel once. You get the gist. Read it again — you notice foreshadowing. Read it a third time — themes emerge.</p>
+      <p>Each encoder pass is like another careful reading of the sentence. Relationships get richer, patterns get clearer, understanding gets deeper.</p>
+      <p><strong>Residual connection</strong> = you never forget what you read before. Each pass adds to — not replaces — your understanding.</p>
+      <div style="background:#fff;border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);margin:12px 0;">
+        <div style="font-size:13px;font-family:'JetBrains Mono',monospace;line-height:2;color:var(--ink-soft);">
+          Pass 1: basic word meanings<br>
+          Pass 2: sentence structure<br>
+          Pass 3: pronoun resolution<br>
+          Pass 4: tone and sentiment<br>
+          Pass 5: topic and domain<br>
+          Pass 6: nuance and implication
+        </div>
+      </div>
+      <div class="callout callout-green">✅ After 6 passes, "it was tired" is fully resolved to "the cat was tired" — the model has built a complete understanding.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 8 — DECODER BLOCK
+══════════════════════════════════════ -->
+<section class="section" id="s8">
+  <div class="sec-head">
+    <div class="sec-num">8</div>
+    <h2>Decoder Block <small>Generating the output</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Architecture</div>
+      <p>The decoder has <strong>three sub-layers</strong> instead of two, and generates output one token at a time:</p>
+      <div class="enc-block" style="border-color:var(--violet);background:var(--violet-pale);">
+        <div class="enc-title" style="color:var(--violet);">Decoder Block (×6)</div>
+        <div class="flow">
+          <div class="flow-box fb-violet show">🔒 Masked Multi-Head Self-Attention</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-teal show">➕ Add &amp; Norm</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-blue show">🔗 Cross-Attention (Encoder ↔ Decoder)</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-teal show">➕ Add &amp; Norm</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-amber show">⚡ Feed-Forward Network</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-teal show">➕ Add &amp; Norm</div>
+          <div class="flow-arr">↓</div>
+          <div class="flow-box fb-dark show">🎯 Linear + Softmax → Next Word</div>
+        </div>
+      </div>
+      <div class="callout callout-rose" style="margin-top:12px;"><strong>Cross-Attention:</strong> The decoder's Query comes from the decoder, but Keys and Values come from the encoder output. This is how the decoder "reads" the encoder's understanding.</div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>Writing an Essay One Word at a Time</h3>
+      <p>Imagine you've just read a detailed brief (encoder's job). Now you must write your response — but with one strict rule: <strong>you can only look at what you've already written</strong>, never at future words.</p>
+      <div style="background:#fff;border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);margin:12px 0;font-family:'JetBrains Mono',monospace;font-size:13px;line-height:2;color:var(--ink-soft);">
+        Step 1: [START] → writes "El"<br>
+        Step 2: El → writes "gato"<br>
+        Step 3: El gato → writes "se"<br>
+        Step 4: El gato se → writes "sentó"<br>
+        Step 5: El gato se sentó → writes "en"<br>
+        …
+      </div>
+      <p>At every step the decoder:</p>
+      <ol style="padding-left:18px;font-size:14.5px;color:var(--ink-soft);">
+        <li style="margin-bottom:5px;">Looks at its own words so far (masked self-attention)</li>
+        <li style="margin-bottom:5px;">Looks at the encoder's full understanding (cross-attention)</li>
+        <li>Predicts the next best word</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 9 — MASKING
+══════════════════════════════════════ -->
+<section class="section" id="s9">
+  <div class="sec-head">
+    <div class="sec-num">9</div>
+    <h2>Masking <small>Preventing the decoder from cheating</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-tech">
+      <div class="lbl lbl-tech">⚙ Technical</div>
+      <p>During training, the decoder sees the full target sentence — but it must <strong>not use future tokens</strong> to predict the current token. Masking enforces this.</p>
+      <p>For sentence: <em>"I love football"</em></p>
+      <div class="mask-grid" style="margin:14px 0;">
+        <div class="mask-row">
+          <div class="mask-cell mc-hdr"></div>
+          <div class="mask-cell mc-hdr">I</div>
+          <div class="mask-cell mc-hdr">love</div>
+          <div class="mask-cell mc-hdr">foot</div>
+          <div class="mask-cell mc-hdr">ball</div>
+        </div>
+        <div class="mask-row">
+          <div class="mask-cell mc-hdr">I</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-hid">✗</div>
+          <div class="mask-cell mc-hid">✗</div>
+          <div class="mask-cell mc-hid">✗</div>
+        </div>
+        <div class="mask-row">
+          <div class="mask-cell mc-hdr">love</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-hid">✗</div>
+          <div class="mask-cell mc-hid">✗</div>
+        </div>
+        <div class="mask-row">
+          <div class="mask-cell mc-hdr">foot</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-hid">✗</div>
+        </div>
+        <div class="mask-row">
+          <div class="mask-cell mc-hdr">ball</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-vis">✓</div>
+          <div class="mask-cell mc-vis">✓</div>
+        </div>
+      </div>
+      <p style="font-size:14px;color:var(--ink-soft);">Green ✓ = allowed to attend &nbsp;|&nbsp; Red ✗ = masked (set to −∞ before softmax)</p>
+      <div class="callout callout-rose">Setting future scores to −∞ before softmax means e^(−∞) = 0 — those positions get exactly zero attention weight.</div>
+    </div>
+    <div class="card card-analogy">
+      <div class="lbl lbl-analogy">💡 Analogy</div>
+      <h3>The Covered Answer Sheet</h3>
+      <p>Imagine sitting an exam where the questions are printed below your answer box. The invigilator places a card over all the questions you haven't reached yet.</p>
+      <p>When answering question 3, you can:</p>
+      <ul style="font-size:14.5px;color:var(--ink-soft);">
+        <li>✅ See questions 1 and 2 (and your own answers)</li>
+        <li>❌ NOT see questions 4, 5, 6… (covered!)</li>
+      </ul>
+      <div style="background:#fff;border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);margin:12px 0;font-size:14px;color:var(--ink-soft);">
+        Predicting "love" → can see: "I" ✓<br>
+        Predicting "football" → can see: "I love" ✓<br>
+        Cannot peek at "football" while predicting "love" ✗
+      </div>
+      <div class="callout callout-amber">💡 Why mask? So the model genuinely learns to predict — if it could see the answer, it would just copy rather than learn patterns.</div>
+      <p style="font-size:14.5px;color:var(--ink-soft);">At inference time (real use), masking is natural — future words don't exist yet anyway!</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 10 — BERT VS GPT
+══════════════════════════════════════ -->
+<section class="section" id="s10">
+  <div class="sec-head">
+    <div class="sec-num">10</div>
+    <h2>BERT vs GPT <small>Two flavours of Transformer</small></h2>
+  </div>
+  <div class="two-col">
+    <div class="card card-visual full">
+      <div class="lbl lbl-visual">📊 Side-by-Side Comparison</div>
+      <div style="overflow-x:auto;">
+        <table class="cmp-table">
+          <tr>
+            <th style="width:20%;">Feature</th>
+            <th style="background:#1d4ed8;">🔵 BERT</th>
+            <th style="background:#6d28d9;">🟣 GPT</th>
+          </tr>
+          <tr><td><strong>Architecture</strong></td><td>Encoder-only</td><td>Decoder-only</td></tr>
+          <tr><td><strong>Reads direction</strong></td><td class="yes">Bidirectional ↔</td><td>Left-to-right →</td></tr>
+          <tr><td><strong>Primary strength</strong></td><td>Understanding text</td><td>Generating text</td></tr>
+          <tr><td><strong>Training task</strong></td><td>Masked Language Modeling (fill gaps)</td><td>Next token prediction</td></tr>
+          <tr><td><strong>Sees full sentence?</strong></td><td class="yes">Yes (both directions)</td><td class="no">No (left context only)</td></tr>
+          <tr><td><strong>Use cases</strong></td><td>Classification, Q&amp;A, NER, Sentiment</td><td>ChatGPT, Code gen, Creative writing</td></tr>
+          <tr><td><strong>Famous versions</strong></td><td>BERT-base, RoBERTa, DistilBERT</td><td>GPT-2, GPT-3, GPT-4, Claude</td></tr>
+          <tr><td><strong>Example task</strong></td><td>"The film was [MASK]" → "great"</td><td>"The film was" → "great, with…"</td></tr>
+        </table>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px;">
+        <div class="callout callout-blue"><strong>🔵 Use BERT when:</strong> You need to understand or classify text — sentiment analysis, extracting answers from documents, named entity recognition.</div>
+        <div class="callout callout-violet"><strong>🟣 Use GPT when:</strong> You need to generate text — chatbots, code generation, summarization, translation, creative writing.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 11 — REAL-WORLD APPLICATIONS
+══════════════════════════════════════ -->
+<section class="section" id="s11">
+  <div class="sec-head">
+    <div class="sec-num">11</div>
+    <h2>Real-World Applications <small>Transformers in the wild</small></h2>
+  </div>
+  <div class="app-grid">
+    <div class="app-card"><div class="app-icon">💬</div><div class="app-name">ChatGPT</div><div class="app-desc">GPT-4 decoder generates human-like conversation responses token by token</div></div>
+    <div class="app-card"><div class="app-icon">🤖</div><div class="app-name">Claude</div><div class="app-desc">Anthropic's LLM — transformer-based with constitutional AI training</div></div>
+    <div class="app-card"><div class="app-icon">💎</div><div class="app-name">Gemini</div><div class="app-desc">Google's multimodal transformer processes text, images, audio, video</div></div>
+    <div class="app-card"><div class="app-icon">🌐</div><div class="app-name">Google Translate</div><div class="app-desc">Encoder-decoder transformer. 100+ languages, 500M+ users daily</div></div>
+    <div class="app-card"><div class="app-icon">📄</div><div class="app-name">Summarization</div><div class="app-desc">BART / T5 condense long documents into key points automatically</div></div>
+    <div class="app-card"><div class="app-icon">❓</div><div class="app-name">Question Answering</div><div class="app-desc">BERT reads a passage, locates and extracts the answer to your question</div></div>
+    <div class="app-card"><div class="app-icon">🔍</div><div class="app-name">Search Engines</div><div class="app-desc">Google uses BERT to understand search query meaning, not just keywords</div></div>
+    <div class="app-card"><div class="app-icon">💻</div><div class="app-name">Code Generation</div><div class="app-desc">GitHub Copilot (GPT-4) suggests entire functions as you type</div></div>
+  </div>
+  <div class="callout callout-blue" style="margin-top:8px;">Every product listed above is powered by the same core idea you learned today: <strong>Query × Key → Softmax → Value</strong>. The scale changed. The architecture is the same.</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SECTION 12 — CHEAT SHEET
+══════════════════════════════════════ -->
+<section class="section" id="s12">
+  <div class="sec-head">
+    <div class="sec-num">★</div>
+    <h2>Final Cheat Sheet <small>Everything on one page</small></h2>
+  </div>
+  <div class="card full">
+    <div class="lbl lbl-tech">📋 Complete Reference</div>
+    <div style="overflow-x:auto;">
+      <table class="cheat-table">
+        <tr>
+          <th style="width:18%;">Concept</th>
+          <th style="width:38%;">What It Does</th>
+          <th style="width:44%;">Analogy</th>
+        </tr>
+        <tr>
+          <td>Positional<br>Encoding</td>
+          <td>Adds a unique position signal to each word's vector so the model knows word order (sin/cos functions)</td>
+          <td>🎭 Theatre seat numbers — same actors, but seat 1 ≠ seat 10</td>
+        </tr>
+        <tr>
+          <td>Self-Attention</td>
+          <td>Each word computes a weighted relationship with every other word. Produces context-aware representations</td>
+          <td>🔍 Detective scanning all clues to resolve what "it" refers to</td>
+        </tr>
+        <tr>
+          <td>Query (Q)</td>
+          <td>A vector representing what the current word is searching for in the sentence</td>
+          <td>❓ "I want spicy food" — your search query</td>
+        </tr>
+        <tr>
+          <td>Key (K)</td>
+          <td>A vector representing what information each word contains / offers</td>
+          <td>🏷 Restaurant name tag — "Thai Curry: spicy, hot"</td>
+        </tr>
+        <tr>
+          <td>Value (V)</td>
+          <td>The actual information each word contributes to the output, weighted by attention scores</td>
+          <td>📦 The actual dish served after you chose Thai Curry</td>
+        </tr>
+        <tr>
+          <td>Softmax</td>
+          <td>Converts raw attention scores into probabilities that sum to 1. Amplifies the biggest scores</td>
+          <td>📊 Voting system — spreads 100 votes across candidates proportionally</td>
+        </tr>
+        <tr>
+          <td>Multi-Head<br>Attention</td>
+          <td>Runs N parallel attention computations, each learning different relationships. Concatenates results</td>
+          <td>🕵 Crime team — grammar, pronoun, sentiment, topic detectives working simultaneously</td>
+        </tr>
+        <tr>
+          <td>Residual<br>Connection</td>
+          <td>Output = Layer(x) + x. Preserves original information alongside the transformed version</td>
+          <td>📚 Re-reading a book but never forgetting the previous reads</td>
+        </tr>
+        <tr>
+          <td>Layer Norm</td>
+          <td>Normalises the output to have zero mean and unit variance. Keeps training stable</td>
+          <td>⚖ Adjusting the volume between songs on a playlist to a consistent level</td>
+        </tr>
+        <tr>
+          <td>Encoder</td>
+          <td>Reads the full input bidirectionally, building a rich contextual representation of meaning</td>
+          <td>🧠 The reader — absorbs and understands the source text completely</td>
+        </tr>
+        <tr>
+          <td>Decoder</td>
+          <td>Generates output tokens one at a time, attending to encoder output and its own previous outputs</td>
+          <td>✍ The writer — produces the response word by word, referencing their notes</td>
+        </tr>
+        <tr>
+          <td>Masking</td>
+          <td>During training, blocks the decoder from attending to future tokens. Sets th
+        </tr>
+        <tr>
+          <td>BERT</td>
+          <td>Encoder-only. Bidirectional context. Best for understanding, classification, Q&amp;A tasks</td>
+          <td>📖 The scholar — reads everything deeply to understand and answer questions</td>
+        </tr>
+        <tr>
+          <td>GPT</td>
+          <td>Decoder-only. Left-to-right generation. Best for text generation, chatbots, code</td>
+          <td>✒ The author — generates one word at a time, building a coherent response</td>
+        </tr>
+      </table>
+    </div>
+    <div class="callout callout-blue" style="margin-top:16px;">
+      <strong>The one formula to remember:</strong><br>
+      <code style="font-family:'JetBrains Mono',monospace;font-size:14px;letter-spacing:.03em;">Attention(Q, K, V) = softmax( QKᵀ / √d_k ) · V</code>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer class="wm-footer">
+  <div style="margin-bottom:5px;"><strong>Transformers &amp; Attention Mechanisms — Teaching Guide</strong></div>
+  <div>Created by <strong>MR-SRIKANTH</strong> &nbsp;·&nbsp; srikanth.potukuchi@gmail.com</div>
+  <div style="margin-top:5px;font-size:11.5px;color:#374151;">© 2025 All rights reserved. For classroom and educational use only.</div>
+</footer>
+
+<style>
+.wm-corner{position:fixed;bottom:16px;right:16px;background:rgba(13,17,23,.85);color:#93c5fd;font-size:11px;font-weight:700;letter-spacing:.06em;padding:7px 14px;border-radius:999px;border:1px solid rgba(147,197,253,.25);backdrop-filter:blur(6px);z-index:9999;pointer-events:none;font-family:'Source Sans 3',sans-serif;}
+</style>
+<div class="wm-corner">✦ MR-SRIKANTH</div>
+
+<script>
+const secObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.05 });
+document.querySelectorAll('.section').forEach(s => secObs.observe(s));
+
+const flowObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.flow-box:not(.show)').forEach((b, i) => {
+        setTimeout(() => b.classList.add('show'), i * 100);
+      });
+      flowObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.15 });
+document.querySelectorAll('.flow').forEach(f => flowObs.observe(f));
+
+const barObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.attn-fill[data-w]').forEach((b, i) => {
+        setTimeout(() => { b.style.width = b.dataset.w; }, 300 + i * 140);
+      });
+      barObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.2 });
+const attnEl = document.getElementById('attnBars');
+if (attnEl) barObs.observe(attnEl);
+
+const tlObs = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.tl-item').forEach((item, i) => {
+        setTimeout(() => item.classList.add('show'), i * 160);
+      });
+      tlObs.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+const tlEl = document.getElementById('tlItems');
+if (tlEl) tlObs.observe(tlEl);
+
+const fuObs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('show'); fuObs.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('.fade-up').forEach(el => fuObs.observe(el));
+</script>
+</body>
+</html>
