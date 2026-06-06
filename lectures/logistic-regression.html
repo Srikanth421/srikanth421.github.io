@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logistic Regression — From Scratch</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #080a0f;
+    --bg2:      #0d1018;
+    --surface:  #111520;
+    --surface2: #161b28;
+    --border:   #1e2438;
+    --border2:  #252d45;
+    --accent:   #00ffa3;
+    --accent2:  #4d7cff;
+    --accent3:  #ff6b6b;
+    --text:     #e2e8f8;
+    --muted:    #5a6388;
+    --muted2:   #3d4866;
+    --mono:     'JetBrains Mono', monospace;
+    --sans:     'Syne', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── GLOW ORBS ── */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.12;
+  }
+  .orb-1 { width: 600px; height: 600px; background: var(--accent2); top: -200px; left: -200px; }
+  .orb-2 { width: 500px; height: 500px; background: var(--accent);  bottom: 10%; right: -150px; }
+  .orb-3 { width: 300px; height: 300px; background: var(--accent3); top: 50%;    left: 30%; }
+
+  /* ── NAV ── */
+  nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(8, 10, 15, 0.85);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .nav-brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .nav-brand::before {
+    content: '';
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 24px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .page {
+    position: relative;
+    z-index: 1;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 4rem 2rem 6rem;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    margin-bottom: 5rem;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .hero-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    padding: 6px 14px;
+    border: 1px solid rgba(0,255,163,0.2);
+    border-radius: 100px;
+    background: rgba(0,255,163,0.05);
+  }
+
+  .hero h1 {
+    font-size: clamp(32px, 6vw, 58px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin-bottom: 1.25rem;
+  }
+
+  .hero h1 .line-accent { color: var(--accent); }
+  .hero h1 .line-dim    { color: var(--muted); font-weight: 400; font-size: 0.65em; }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 540px;
+    line-height: 1.7;
+    font-family: var(--mono);
+    font-weight: 300;
+  }
+
+  .hero-chips {
+    display: flex;
+    gap: 10px;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .chip {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 5px 12px;
+    border-radius: 100px;
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    background: var(--surface);
+  }
+
+  /* ── SECTION ── */
+  .section {
+    margin-bottom: 4rem;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 1.75rem;
+  }
+
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(0,255,163,0.07);
+    border: 1px solid rgba(0,255,163,0.15);
+    border-radius: 6px;
+    padding: 3px 9px;
+    letter-spacing: 0.08em;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--border2) 0%, transparent 100%);
+  }
+
+  /* ── ARCH DIAGRAM ── */
+  .arch {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  .arch-node {
+    flex-shrink: 0;
+    text-align: center;
+    min-width: 90px;
+  }
+
+  .arch-box {
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    white-space: nowrap;
+  }
+
+  .arch-box.input    { background: rgba(77,124,255,0.12); border: 1px solid rgba(77,124,255,0.3); color: var(--accent2); }
+  .arch-box.linear   { background: rgba(255,255,255,0.05); border: 1px solid var(--border2); color: var(--text); }
+  .arch-box.sigmoid  { background: rgba(0,255,163,0.08); border: 1px solid rgba(0,255,163,0.2); color: var(--accent); }
+  .arch-box.output   { background: rgba(255,107,107,0.08); border: 1px solid rgba(255,107,107,0.2); color: var(--accent3); }
+
+  .arch-sub {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .arch-arrow {
+    flex-shrink: 0;
+    padding: 0 10px;
+    color: var(--muted2);
+    font-size: 18px;
+    margin-bottom: 16px;
+  }
+
+  /* ── FORMULA CARDS ── */
+  .formula-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 1rem;
+  }
+
+  @media (max-width: 600px) { .formula-grid { grid-template-columns: 1fr; } }
+
+  .formula-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .formula-card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+  }
+
+  .formula-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .formula-card.f1::before { background: linear-gradient(90deg, var(--accent), transparent); }
+  .formula-card.f2::before { background: linear-gradient(90deg, var(--accent2), transparent); }
+  .formula-card.f3::before { background: linear-gradient(90deg, var(--accent3), transparent); }
+  .formula-card.f4::before { background: linear-gradient(90deg, #a855f7, transparent); }
+
+  .formula-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .f1 .formula-num { color: var(--accent); }
+  .f2 .formula-num { color: var(--accent2); }
+  .f3 .formula-num { color: var(--accent3); }
+  .f4 .formula-num { color: #a855f7; }
+
+  .formula-name {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    color: var(--text);
+  }
+
+  .formula-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .formula-eq {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent);
+    line-height: 1.8;
+    white-space: pre-wrap;
+  }
+
+  .f2 .formula-eq { color: var(--accent2); }
+  .f3 .formula-eq { color: var(--accent3); }
+  .f4 .formula-eq { color: #a855f7; }
+
+  /* ── PSEUDOCODE BLOCK ── */
+  .pseudo-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .pseudo-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 20px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .pseudo-dots {
+    display: flex;
+    gap: 7px;
+  }
+  .pseudo-dot {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+  }
+  .pseudo-dot.r { background: #ff5f57; }
+  .pseudo-dot.y { background: #febc2e; }
+  .pseudo-dot.g { background: #28c840; }
+
+  .pseudo-filename {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .pseudo-body {
+    padding: 0;
+  }
+
+  .pseudo-method {
+    border-bottom: 1px solid var(--border);
+  }
+  .pseudo-method:last-child { border-bottom: none; }
+
+  .method-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .method-toggle:hover { background: rgba(255,255,255,0.02); }
+
+  .method-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 9px;
+    border-radius: 5px;
+    letter-spacing: 0.06em;
+    flex-shrink: 0;
+  }
+  .tag-def    { background: rgba(77,124,255,0.15); color: var(--accent2); border: 1px solid rgba(77,124,255,0.25); }
+  .tag-init   { background: rgba(0,255,163,0.1);  color: var(--accent);  border: 1px solid rgba(0,255,163,0.2); }
+  .tag-train  { background: rgba(255,107,107,0.1); color: var(--accent3); border: 1px solid rgba(255,107,107,0.2); }
+  .tag-pred   { background: rgba(168,85,247,0.1);  color: #a855f7;        border: 1px solid rgba(168,85,247,0.2); }
+
+  .method-name {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    flex: 1;
+  }
+
+  .method-desc {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+  }
+
+  .method-chevron {
+    font-size: 10px;
+    color: var(--muted2);
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+  .pseudo-method.open .method-chevron { transform: rotate(180deg); }
+
+  .method-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1);
+  }
+  .pseudo-method.open .method-content { max-height: 800px; }
+
+  .method-code {
+    margin: 0 20px 20px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    line-height: 1.85;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--text);
+  }
+
+  .kw   { color: var(--accent2); }
+  .fn   { color: var(--accent); }
+  .cm   { color: var(--muted); font-style: italic; }
+  .op   { color: var(--accent3); }
+  .num  { color: #f7c948; }
+  .str  { color: #a5d6a7; }
+
+  /* ── WHY TABLE ── */
+  .why-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .why-table th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .why-table td {
+    padding: 13px 16px;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+    line-height: 1.6;
+  }
+
+  .why-table tr:last-child td { border-bottom: none; }
+
+  .why-table tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+
+  .why-table td:first-child {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+    white-space: nowrap;
+    width: 190px;
+  }
+
+  .why-table td:last-child { color: var(--muted); }
+
+  /* ── NN TABLE ── */
+  .nn-table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .nn-table th {
+    background: var(--surface2);
+    padding: 12px 16px;
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nn-table th:first-child { color: var(--accent); }
+  .nn-table th:last-child  { color: var(--accent2); }
+
+  .nn-table td {
+    padding: 12px 16px;
+    font-family: var(--mono);
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+  }
+
+  .nn-table tr:last-child td { border-bottom: none; }
+  .nn-table tr:nth-child(even) td { background: rgba(255,255,255,0.015); }
+  .nn-table td:first-child { color: var(--accent); }
+  .nn-table td:nth-child(2) { color: var(--muted2); text-align: center; }
+  .nn-table td:last-child   { color: var(--accent2); font-style: italic; }
+
+  /* ── ONE-LINERS ── */
+  .oneliner-list { display: flex; flex-direction: column; gap: 12px; }
+
+  .oneliner {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .oneliner:hover { border-color: var(--border2); }
+
+  .oneliner-topic {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 8px;
+  }
+
+  .oneliner-text {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+    font-style: italic;
+  }
+
+  .oneliner-text::before { content: '" '; color: var(--border2); font-size: 18px; }
+  .oneliner-text::after  { content: ' "'; color: var(--border2); font-size: 18px; }
+
+  /* ── STICKY NOTE ── */
+  .sticky {
+    background: var(--surface);
+    border: 1px solid rgba(0,255,163,0.2);
+    border-radius: 16px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sticky::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at top left, rgba(0,255,163,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .sticky-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .sticky-title::before {
+    content: '★';
+    font-size: 12px;
+  }
+
+  .sticky-code {
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 2;
+    color: var(--accent);
+    white-space: pre-wrap;
+  }
+
+  .sticky-code .dim  { color: var(--muted); }
+  .sticky-code .blue { color: var(--accent2); }
+  .sticky-code .red  { color: var(--accent3); }
+  .sticky-code .pur  { color: #a855f7; }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    padding: 2rem;
+    border-top: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted2);
+  }
+
+  /* ── SCROLL ANIMATIONS ── */
+  .section { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+  .section.visible { opacity: 1; transform: translateY(0); }
+  .hero { opacity: 1; transform: none; }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<nav>
+  <div class="nav-brand">logistic_regression.py</div>
+  <ul class="nav-links">
+    <li><a href="#formulas">Formulas</a></li>
+    <li><a href="#pseudocode">Pseudocode</a></li>
+    <li><a href="#why">Why</a></li>
+    <li><a href="#neural">Neural Net</a></li>
+    <li><a href="#sticky">Reference</a></li>
+  </ul>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">Karat Interview Prep · Citi AI/ML</div>
+    <h1>
+      Logistic Regression<br>
+      <span class="line-accent">From Scratch</span><br>
+      <span class="line-dim">Pseudocode · Formulas · Intuition</span>
+    </h1>
+    <p class="hero-desc">A single-neuron neural network. Everything here maps directly to deep learning.</p>
+    <div class="hero-chips">
+      <div class="chip">sigmoid activation</div>
+      <div class="chip">binary cross-entropy</div>
+      <div class="chip">gradient descent</div>
+      <div class="chip">early stopping</div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="section visible" id="arch">
+    <div class="section-header">
+      <div class="section-num">00</div>
+      <div class="section-title">Architecture</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="arch">
+      <div class="arch-node">
+        <div class="arch-box input">Input X</div>
+        <div class="arch-sub">n_samples × n_features</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="arch-box linear">z = X·w + b</div>
+        <div class="arch-sub">linear combination</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="arch-box sigmoid">σ(z)</div>
+        <div class="arch-sub">sigmoid activation</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="arch-box output">ŷ ∈ (0,1)</div>
+        <div class="arch-sub">probability output</div>
+      </div>
+      <div class="arch-arrow">→</div>
+      <div class="arch-node">
+        <div class="arch-box linear">Loss L</div>
+        <div class="arch-sub">binary cross-entropy</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMULAS -->
+  <div class="section" id="formulas">
+    <div class="section-header">
+      <div class="section-num">01</div>
+      <div class="section-title">The 4 Formulas — Memorise These</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="formula-grid">
+      <div class="formula-card f1">
+        <div class="formula-num">Formula 01</div>
+        <div class="formula-name">Sigmoid Function</div>
+        <div class="formula-note">Squashes any real number → probability in (0, 1)</div>
+        <div class="formula-eq">σ(z) = 1 / (1 + e^(-z))
+
+σ(-∞) → 0
+σ(0)  = 0.5
+σ(+∞) → 1</div>
+      </div>
+
+      <div class="formula-card f2">
+        <div class="formula-num">Formula 02</div>
+        <div class="formula-name">Forward Pass</div>
+        <div class="formula-note">Linear combination → sigmoid → probability</div>
+        <div class="formula-eq">z     = X · w + b
+
+ŷ     = σ(z)
+      = σ(X · w + b)</div>
+      </div>
+
+      <div class="formula-card f3">
+        <div class="formula-num">Formula 03</div>
+        <div class="formula-name">Binary Cross-Entropy Loss</div>
+        <div class="formula-note">Penalises confident wrong predictions exponentially</div>
+        <div class="formula-eq">L = -1/n · Σ [
+  y · log(ŷ) + (1-y) · log(1-ŷ)
+]
+
+y=1, ŷ≈1  →  loss ≈ 0  ✓
+y=1, ŷ≈0  →  loss → ∞  ✗</div>
+      </div>
+
+      <div class="formula-card f4">
+        <div class="formula-num">Formula 04</div>
+        <div class="formula-name">Gradients + Weight Update</div>
+        <div class="formula-note">Chain rule result — log + sigmoid derivatives cancel cleanly</div>
+        <div class="formula-eq">∂L/∂w = X.T · (ŷ - y) / n
+∂L/∂b = mean(ŷ - y)
+
+w ← w - lr · ∂L/∂w
+b ← b - lr · ∂L/∂b</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PSEUDOCODE -->
+  <div class="section" id="pseudocode">
+    <div class="section-header">
+      <div class="section-num">02</div>
+      <div class="section-title">Complete Pseudocode</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="pseudo-wrap">
+      <div class="pseudo-header">
+        <div class="pseudo-dots">
+          <div class="pseudo-dot r"></div>
+          <div class="pseudo-dot y"></div>
+          <div class="pseudo-dot g"></div>
+        </div>
+        <div class="pseudo-filename">LogisticRegression.pseudo</div>
+        <div style="width:52px"></div>
+      </div>
+
+      <div class="pseudo-body">
+
+        <!-- __init__ -->
+        <div class="pseudo-method open">
+          <button class="method-toggle" onclick="toggleMethod(this)">
+            <span class="method-tag tag-init">INIT</span>
+            <span class="method-name">__init__(learning_rate, epochs, tolerance)</span>
+            <span class="method-desc">set hyperparameters</span>
+            <span class="method-chevron">▼</span>
+          </button>
+          <div class="method-content">
+            <div class="method-code"><span class="cm"># Hyperparameters</span>
+self.lr           = learning_rate   <span class="cm"># step size, e.g. 0.01</span>
+self.epochs       = epochs          <span class="cm"># max iterations, e.g. 1000</span>
+self.tolerance    = tolerance       <span class="cm"># early stop threshold, e.g. 1e-4</span>
+
+<span class="cm"># Learned parameters (set during fit)</span>
+self.weights      = None            <span class="cm"># shape: (n_features,)</span>
+self.bias         = None            <span class="cm"># scalar</span>
+
+<span class="cm"># Early stopping tracker</span>
+self.prev_loss    = infinity        <span class="cm"># start high so first epoch always runs</span></div>
+          </div>
+        </div>
+
+        <!-- sigmoid -->
+        <div class="pseudo-method">
+          <button class="method-toggle" onclick="toggleMethod(this)">
+            <span class="method-tag tag-def">METHOD</span>
+            <span class="method-name">sigmoid(z)</span>
+            <span class="method-desc">activation function</span>
+            <span class="method-chevron">▼</span>
+          </button>
+          <div class="method-content">
+            <div class="method-code"><span class="cm"># Convert raw score → probability</span>
+<span class="kw">RETURN</span>  1 / (1 + e^(-z))
+
+<span class="cm"># Works element-wise on arrays</span>
+<span class="cm"># sigmoid(-∞) → 0  |  sigmoid(0) = 0.5  |  sigmoid(+∞) → 1</span></div>
+          </div>
+        </div>
+
+        <!-- binary_cross_entropy -->
+        <div class="pseudo-method">
+          <button class="method-toggle" onclick="toggleMethod(this)">
+            <span class="method-tag tag-def">METHOD</span>
+            <span class="method-name">binary_cross_entropy(y, y_hat)</span>
+            <span class="method-desc">measure how wrong predictions are</span>
+            <span class="method-chevron">▼</span>
+          </button>
+          <div class="method-content">
+            <div class="method-code"><span class="cm"># y     = actual labels (0 or 1)     shape: (n,)</span>
+<span class="cm"># y_hat = predicted probabilities    shape: (n,)</span>
+
+loss = -mean(
+    y     * log(y_hat)    +     <span class="cm"># term for class 1</span>
+    (1-y) * log(1 - y_hat)      <span class="cm"># term for class 0</span>
+)
+
+<span class="kw">RETURN</span> loss   <span class="cm"># single scalar — lower is better</span>
+
+<span class="cm"># Used to: monitor training, trigger early stopping</span>
+<span class="cm"># NOT directly used in weight updates (gradients are)</span></div>
+          </div>
+        </div>
+
+        <!-- fit -->
+        <div class="pseudo-method">
+          <button class="method-toggle" onclick="toggleMethod(this)">
+            <span class="method-tag tag-train">TRAIN</span>
+            <span class="method-name">fit(X, y)</span>
+            <span class="method-desc">learn weights via gradient descent</span>
+            <span class="method-chevron">▼</span>
+          </button>
+          <div class="method-content">
+            <div class="method-code"><span class="cm">── INITIALISE ──────────────────────────────────────</span>
+weights  ← zeros(n_features)    <span class="cm"># X.shape[1]</span>
+bias     ← 0
+
+<span class="cm">── TRAINING LOOP ───────────────────────────────────</span>
+<span class="kw">FOR</span> epoch <span class="kw">IN</span> range(epochs):
+
+    <span class="cm">┌── FORWARD PASS ───────────────────────────────┐</span>
+    z      = X · weights + bias       <span class="cm"># linear step</span>
+    y_hat  = sigmoid(z)               <span class="cm"># probabilities</span>
+    <span class="cm">└───────────────────────────────────────────────┘</span>
+
+    <span class="cm">┌── LOSS ───────────────────────────────────────┐</span>
+    loss   = binary_cross_entropy(y, y_hat)
+    <span class="cm">└───────────────────────────────────────────────┘</span>
+
+    <span class="cm">┌── EARLY STOPPING ─────────────────────────────┐</span>
+    <span class="kw">IF</span> |prev_loss - loss| &lt; tolerance:
+        PRINT "Converged at epoch", epoch
+        <span class="kw">BREAK</span>
+    prev_loss ← loss
+    <span class="cm">└───────────────────────────────────────────────┘</span>
+
+    <span class="cm">┌── BACKWARD PASS (gradients) ──────────────────┐</span>
+    grad_w = X.T · (y_hat - y) / n    <span class="cm"># shape: (n_features,)</span>
+    grad_b = mean(y_hat - y)          <span class="cm"># scalar</span>
+    <span class="cm">└───────────────────────────────────────────────┘</span>
+
+    <span class="cm">┌── UPDATE WEIGHTS ─────────────────────────────┐</span>
+    weights ← weights  -  lr · grad_w
+    bias    ← bias     -  lr · grad_b
+    <span class="cm">└───────────────────────────────────────────────┘</span></div>
+          </div>
+        </div>
+
+        <!-- predict_proba -->
+        <div class="pseudo-method">
+          <button class="method-toggle" onclick="toggleMethod(this)">
+            <span class="method-tag tag-pred">PREDICT</span>
+            <span class="method-name">predict_proba(X)</span>
+            <span class="method-desc">raw probabilities for each sample</span>
+            <span class="method-chevron">▼</span>
+          </button>
+          <div class="method-content">
+            <div class="method-code"><span class="cm"># Just the forward pass — no learning</span>
+z = X · weights + bias
+<span class="kw">RETURN</span> sigmoid(z)     <span class="cm"># probabilities in (0, 1)</span></div>
+          </div>
+        </div>
+
+        <!-- predict -->
+        <div class="pseudo-method">
+          <button class="method-toggle" onclick="toggleMethod(this)">
+            <span class="method-tag tag-pred">PREDICT</span>
+            <span class="method-name">predict(X, threshold=0.5)</span>
+            <span class="method-desc">binary class labels</span>
+            <span class="method-chevron">▼</span>
+          </button>
+          <div class="method-content">
+            <div class="method-code">probs = predict_proba(X)
+
+<span class="kw">RETURN</span> 1 <span class="kw">if</span> prob > threshold <span class="kw">else</span> 0   <span class="cm"># per sample</span>
+
+<span class="cm"># In numpy (one line):</span>
+<span class="cm"># (probs > threshold).astype(int)</span></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- WHY TABLE -->
+  <div class="section" id="why">
+    <div class="section-header">
+      <div class="section-num">03</div>
+      <div class="section-title">Why Each Piece Exists</div>
+      <div class="section-line"></div>
+    </div>
+
+    <table class="why-table">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Why it exists</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>sigmoid(z)</td><td>Neural networks need outputs as probabilities. Sigmoid maps any real number to (0,1) — making the output interpretable as a probability.</td></tr>
+        <tr><td>X · w + b</td><td>Learn a weighted combination of features. The bias b lets the decision boundary shift freely, not just pass through the origin.</td></tr>
+        <tr><td>binary_cross_entropy</td><td>Penalises confident wrong predictions exponentially. Pairs perfectly with sigmoid — their derivatives cancel cleanly in the chain rule.</td></tr>
+        <tr><td>X.T in grad_w</td><td>Shape alignment. X is (n, f), error is (n,). X.T · error gives (f,) — exactly one gradient per weight. Without .T the shapes don't multiply.</td></tr>
+        <tr><td>(ŷ - y) error term</td><td>Large when wrong, small when right. Drives weight updates proportionally to how wrong the prediction was.</td></tr>
+        <tr><td>learning rate (lr)</td><td>Controls step size. Too large = overshoot and diverge. Too small = very slow convergence. Typically 0.01 or tuned via grid search.</td></tr>
+        <tr><td>early stopping</td><td>Stop when loss improvement &lt; tolerance. Prevents wasted computation and reduces overfitting on training data.</td></tr>
+        <tr><td>weights = zeros</td><td>Safe initialisation. Unlike deep nets, logistic regression doesn't suffer from symmetry breaking issues with zero init.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- NEURAL NETWORK CONNECTION -->
+  <div class="section" id="neural">
+    <div class="section-header">
+      <div class="section-num">04</div>
+      <div class="section-title">Connection to Neural Networks</div>
+      <div class="section-line"></div>
+    </div>
+
+    <p style="font-family: var(--mono); font-size: 12px; color: var(--muted); margin-bottom: 1.25rem; line-height: 1.7;">
+      Logistic regression IS a neural network — one neuron, no hidden layers. Everything here scales to deep learning.
+    </p>
+
+    <table class="nn-table">
+      <thead>
+        <tr>
+          <th>Logistic Regression</th>
+          <th></th>
+          <th>Neural Network Equivalent</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>sigmoid(z)</td><td>→</td><td>activation function (ReLU, tanh, softmax...)</td></tr>
+        <tr><td>X · w + b</td><td>→</td><td>fully connected layer (nn.Linear)</td></tr>
+        <tr><td>binary_cross_entropy</td><td>→</td><td>loss function (cross-entropy, MSE, focal...)</td></tr>
+        <tr><td>X.T · (ŷ-y) / n</td><td>→</td><td>backpropagation (chain rule across all layers)</td></tr>
+        <tr><td>weight update loop</td><td>→</td><td>optimizer (SGD, Adam, RMSProp...)</td></tr>
+        <tr><td>one neuron</td><td>→</td><td>millions of neurons across many layers</td></tr>
+        <tr><td>early stopping</td><td>→</td><td>early stopping + learning rate scheduler</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ONE-LINERS -->
+  <div class="section" id="oneliners">
+    <div class="section-header">
+      <div class="section-num">05</div>
+      <div class="section-title">Interview One-Liners</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="oneliner-list">
+      <div class="oneliner">
+        <div class="oneliner-topic">On Sigmoid</div>
+        <div class="oneliner-text">Sigmoid squashes any real number into a probability between 0 and 1. It's the activation function that turns logistic regression into a classifier rather than a regressor.</div>
+      </div>
+      <div class="oneliner">
+        <div class="oneliner-topic">On Binary Cross-Entropy</div>
+        <div class="oneliner-text">Binary cross-entropy penalises confident wrong predictions exponentially. It's paired with sigmoid because their derivatives cancel cleanly in the chain rule, giving us the simple (ŷ - y) error term.</div>
+      </div>
+      <div class="oneliner">
+        <div class="oneliner-topic">On the Gradient Formula</div>
+        <div class="oneliner-text">The gradient X.T dot (ŷ - y) / n comes from applying the chain rule to the loss. X.T is needed purely for shape alignment — we need one gradient per feature, not per sample.</div>
+      </div>
+      <div class="oneliner">
+        <div class="oneliner-topic">On Early Stopping</div>
+        <div class="oneliner-text">Instead of blindly running all epochs, we track the loss each iteration and stop when the improvement drops below a tolerance threshold. This saves compute and reduces overfitting.</div>
+      </div>
+      <div class="oneliner">
+        <div class="oneliner-topic">On the Neural Network Connection</div>
+        <div class="oneliner-text">Logistic regression is a single-neuron neural network. The forward pass is identical to one linear layer followed by sigmoid. Backprop here is just the chain rule across one layer — the simplest possible case.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STICKY NOTE -->
+  <div class="section" id="sticky">
+    <div class="section-header">
+      <div class="section-num">06</div>
+      <div class="section-title">Sticky Note — Review Saturday Morning</div>
+      <div class="section-line"></div>
+    </div>
+
+    <div class="sticky">
+      <div class="sticky-title">5 Formulas at a Glance</div>
+      <div class="sticky-code"><span class="dim">1. SIGMOID      </span>σ(z) = 1 / (1 + e^-z)
+
+<span class="dim">2. FORWARD      </span>z = X·w + b   →   ŷ = σ(z)
+
+<span class="dim">3. LOSS         </span>L = -mean( y·log(ŷ) + (1-y)·log(1-ŷ) )
+
+<span class="dim">4. GRADIENTS    </span>∂L/∂w = X.T·(ŷ-y)/n     ∂L/∂b = mean(ŷ-y)
+
+<span class="dim">5. UPDATE       </span>w = w - lr·∂L/∂w         b = b - lr·∂L/∂b</div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Logistic Regression Reference · Citi Karat Interview Prep · Interview at 5pm Saturday · Stop studying by 3:30pm ✦
+</footer>
+
+<script>
+  function toggleMethod(btn) {
+    const method = btn.closest('.pseudo-method');
+    method.classList.toggle('open');
+  }
+
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+
+  // Stagger animation delays
+  document.querySelectorAll('.section').forEach((s, i) => {
+    s.style.transitionDelay = `${i * 0.05}s`;
+  });
+</script>
+
+<style>
+.wm-footer{background:#0d1117;color:#64748b;text-align:center;padding:28px 24px;font-size:13px;letter-spacing:.03em;border-top:3px solid #1d4ed8;font-family:sans-serif;}
+.wm-footer strong{color:#e2e8f0;}
+.wm-footer a{color:#93c5fd;text-decoration:none;}
+.wm-corner{position:fixed;bottom:16px;right:16px;background:rgba(13,17,23,.85);color:#93c5fd;font-size:11px;font-weight:700;letter-spacing:.06em;padding:7px 14px;border-radius:999px;border:1px solid rgba(147,197,253,.25);backdrop-filter:blur(6px);z-index:9999;pointer-events:none;font-family:sans-serif;}
+@media print{.wm-corner{display:none;}}
+</style>
+<footer class="wm-footer">
+<div style="margin-bottom:5px;"><strong>NLP &amp; ML Teaching Guide</strong></div>
+<div>Created by <strong>MR-SRIKANTH</strong> &middot; srikanth.potukuchi@gmail.com</div>
+<div style="margin-top:5px;font-size:11.5px;color:#374151;">&copy; 2025 All rights reserved. For classroom and educational use only.</div>
+</footer>
+<div class="wm-corner">&#10022; MR-SRIKANTH</div>
+
+</body>
+</html>
