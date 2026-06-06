@@ -193,6 +193,7 @@ main{
 .accent-2{background:linear-gradient(180deg,#6d28d9,#8b5cf6);}
 .accent-3{background:linear-gradient(180deg,#0d9488,#2dd4bf);}
 .accent-4{background:linear-gradient(180deg,#b45309,#f59e0b);}
+.accent-5{background:linear-gradient(180deg,#be123c,#f43f5e);}
 
 .card-body{padding:28px 28px 28px 24px;}
 
@@ -215,6 +216,7 @@ main{
 .num-2{background:var(--violet);}
 .num-3{background:var(--teal);}
 .num-4{background:var(--amber);}
+.num-5{background:#be123c;}
 
 .card-badge{
   font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;
@@ -341,12 +343,79 @@ main{
 
   <div class="lectures">
 
-    <!-- LECTURE 1 -->
+    <!-- LECTURE 1 — Logistic Regression -->
+    <a href="lectures/logistic-regression.html" class="lecture-card reveal">
+      <div class="card-accent accent-3"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-number num-3">1</div>
+          <span class="card-badge badge-live">Live</span>
+        </div>
+        <div class="card-title">Logistic Regression — From Scratch</div>
+        <div class="card-desc">The building block of neural networks. Covers the sigmoid function, log-loss, gradient descent, decision boundaries, and the direct connection to a single-neuron neural network.</div>
+        <div class="card-topics">
+          <span class="topic">Sigmoid Function</span>
+          <span class="topic">Log-Loss</span>
+          <span class="topic">Gradient Descent</span>
+          <span class="topic">Pseudocode</span>
+          <span class="topic">Neural Net Connection</span>
+        </div>
+        <div class="card-cta">Open Interactive Lecture <span class="card-cta-arrow">→</span></div>
+      </div>
+    </a>
+
+    <!-- LECTURE 2 — Neural Networks -->
+    <a href="lectures/neural-networks.html" class="lecture-card reveal">
+      <div class="card-accent accent-4"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-number num-4">2</div>
+          <span class="card-badge badge-live">Live</span>
+        </div>
+        <div class="card-title">Neural Networks — Visual Teaching Guide</div>
+        <div class="card-desc">From single perceptrons to deep architectures. Covers neurons, activation functions (Sigmoid, ReLU, Tanh), forward pass, backpropagation, loss functions, and model building with interactive tabbed sections.</div>
+        <div class="card-topics">
+          <span class="topic">Perceptron</span>
+          <span class="topic">Activation Functions</span>
+          <span class="topic">Forward Pass</span>
+          <span class="topic">Backpropagation</span>
+          <span class="topic">Hidden Layers</span>
+          <span class="topic">SGD</span>
+          <span class="topic">Loss Functions</span>
+        </div>
+        <div class="card-cta">Open Interactive Lecture <span class="card-cta-arrow">→</span></div>
+      </div>
+    </a>
+
+    <!-- LECTURE 3 — NN Training (Fraud) -->
+    <a href="lectures/nn-training-guide.html" class="lecture-card reveal">
+      <div class="card-accent accent-5"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div class="card-number num-5">3</div>
+          <span class="card-badge badge-live">Live</span>
+        </div>
+        <div class="card-title">Neural Network Training — Fraud Detection Guide</div>
+        <div class="card-desc">A practical deep-dive into training neural networks using fraud detection as the running example. Covers weight initialization (Xavier/He), Batch Normalization, Dropout, SGD with Momentum, Adam optimizer, and a complete forward-pass walkthrough.</div>
+        <div class="card-topics">
+          <span class="topic">Xavier Init</span>
+          <span class="topic">He Init</span>
+          <span class="topic">Batch Norm</span>
+          <span class="topic">Dropout</span>
+          <span class="topic">SGD + Momentum</span>
+          <span class="topic">Adam Optimizer</span>
+          <span class="topic">Full Example</span>
+        </div>
+        <div class="card-cta">Open Interactive Lecture <span class="card-cta-arrow">→</span></div>
+      </div>
+    </a>
+
+    <!-- LECTURE 4 — Word Embeddings -->
     <a href="lectures/word-embeddings.html" class="lecture-card reveal">
       <div class="card-accent accent-1"></div>
       <div class="card-body">
         <div class="card-top">
-          <div class="card-number num-1">1</div>
+          <div class="card-number num-1">4</div>
           <span class="card-badge badge-live">Live</span>
           <span class="card-badge badge-new">14 Sections</span>
         </div>
@@ -368,12 +437,12 @@ main{
       </div>
     </a>
 
-    <!-- LECTURE 2 -->
+    <!-- LECTURE 5 — Transformers -->
     <a href="lectures/transformers.html" class="lecture-card reveal">
       <div class="card-accent accent-2"></div>
       <div class="card-body">
         <div class="card-top">
-          <div class="card-number num-2">2</div>
+          <div class="card-number num-2">5</div>
           <span class="card-badge badge-live">Live</span>
           <span class="card-badge badge-new">13 Sections</span>
         </div>
@@ -426,8 +495,11 @@ main{
   <div><strong>NLP &amp; ML Teaching Portal</strong> — by <strong>MR-SRIKANTH</strong></div>
   <div style="margin-top:6px;">srikanth.potukuchi@gmail.com &nbsp;·&nbsp; © 2025 All rights reserved</div>
   <div class="footer-links">
-    <a href="lectures/word-embeddings.html">Lecture 1: Word Embeddings</a>
-    <a href="lectures/transformers.html">Lecture 2: Transformers</a>
+    <a href="lectures/logistic-regression.html">1: Logistic Regression</a>
+    <a href="lectures/neural-networks.html">2: Neural Networks</a>
+    <a href="lectures/nn-training-guide.html">3: NN Training</a>
+    <a href="lectures/word-embeddings.html">4: Word Embeddings</a>
+    <a href="lectures/transformers.html">5: Transformers</a>
     <a href="https://github.com/srikanth421">GitHub</a>
   </div>
 </footer>
