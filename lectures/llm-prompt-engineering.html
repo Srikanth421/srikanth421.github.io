@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LLMs &amp; Prompt Engineering — Visual Teaching Guide</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Nunito+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{--ink:#1a1a1a;--ink2:#334155;--ink3:#64748b;--blue:#1e40af;--blue-mid:#3b82f6;--blue-pale:#eff6ff;--blue-soft:#dbeafe;--green:#166534;--green-mid:#16a34a;--green-pale:#f0fdf4;--green-soft:#dcfce7;--amber:#92400e;--amber-pale:#fffbeb;--violet:#5b21b6;--violet-pale:#f5f3ff;--rose:#9f1239;--rose-pale:#fff1f2;--teal:#134e4a;--teal-pale:#f0fdfa;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--r:12px;--r-sm:7px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{font-family:'Nunito Sans',sans-serif;background:#fff;color:var(--ink);font-size:16px;line-height:1.7}
+.hero{background:linear-gradient(135deg,#1a0533 0%,#3b0764 40%,#6d28d9 100%);color:#fff;padding:52px 36px 44px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 70%,rgba(139,92,246,.25) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(59,130,246,.15) 0%,transparent 50%)}
+.hero-inner{position:relative;max-width:820px;margin:0 auto}
+.hero-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#c4b5fd;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:5px 16px;border-radius:999px;margin-bottom:20px}
+.hero h1{font-family:'Bitter',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:700;line-height:1.12;margin-bottom:14px}
+.hero h1 em{font-style:italic;color:#c4b5fd}
+.hero p{font-size:1.05rem;color:#c4b5fd;max-width:560px;margin:0 auto}
+.nav{background:#fff;border-bottom:1.5px solid var(--border);padding:10px 18px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;position:sticky;top:0;z-index:200}
+.nav a{font-size:12px;font-weight:600;color:var(--ink3);text-decoration:none;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:#fff;transition:all .18s;white-space:nowrap}
+.nav a:hover{background:var(--violet);color:#fff;border-color:var(--violet)}
+main{max-width:1100px;margin:0 auto;padding:0 22px 60px}
+.section{margin:48px 0;opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.section.vis{opacity:1;transform:none}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--border)}
+.sec-num{width:40px;height:40px;border-radius:50%;background:var(--violet);color:#fff;font-family:'Bitter',serif;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-head h2{font-family:'Bitter',serif;font-size:clamp(1.2rem,3vw,1.55rem);font-weight:700}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}
+@media(max-width:720px){.two-col{grid-template-columns:1fr}}
+.card{border-radius:var(--r);padding:22px;border:1.5px solid var(--border);background:#fff}
+.card-a{background:var(--amber-pale);border-color:#fcd34d}.card-v{background:var(--violet-pale);border-color:#c4b5fd}
+.card-b{background:var(--blue-pale);border-color:#93c5fd}.card-g{background:var(--green-pale);border-color:#86efac}
+.card-r{background:var(--rose-pale);border-color:#fca5a5}
+.lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.lbl-tech{color:var(--violet)}.lbl-an{color:var(--amber)}
+.card h3{font-family:'Bitter',serif;font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.card p{font-size:15px;color:var(--ink2);margin-bottom:8px}.card p:last-child{margin-bottom:0}
+.code{background:var(--ink);color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75;border-radius:var(--r-sm);padding:14px 16px;overflow-x:auto;margin:8px 0;white-space:pre-wrap}
+.code .hi{color:#a78bfa;font-weight:600}.code .mn{color:#fde68a}.code .ro{color:#fca5a5}.code .cm{color:#475569}.code .kw{color:#93c5fd}.code .gn{color:#86efac}
+.callout{border-radius:var(--r-sm);padding:12px 16px;font-size:14px;margin:8px 0}
+.co-blue{background:var(--blue-soft);border-left:4px solid var(--blue);color:#1e3a8a}
+.co-green{background:var(--green-soft);border-left:4px solid var(--green-mid);color:#14532d}
+.co-amber{background:#fef3c7;border-left:4px solid #f59e0b;color:#78350f}
+.co-rose{background:var(--rose-pale);border-left:4px solid #f43f5e;color:#881337}
+.co-violet{background:var(--violet-pale);border-left:4px solid var(--violet);color:#3b0764}
+.cmp-table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}
+.cmp-table th{background:var(--ink);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:12px}
+.cmp-table th:first-child{border-radius:8px 0 0 0}.cmp-table th:last-child{border-radius:0 8px 0 0}
+.cmp-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:top}
+.cmp-table tr:nth-child(even) td{background:var(--surface2)}
+.cmp-table .yes{color:var(--green-mid);font-weight:700}.cmp-table .no{color:var(--rose);font-weight:700}
+.param-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+@media(max-width:600px){.param-grid{grid-template-columns:1fr}}
+.param-card{border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);background:#fff}
+.param-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--violet);margin-bottom:4px}
+.param-desc{font-size:13px;color:var(--ink2);line-height:1.5}
+.param-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);margin-top:4px}
+.prompt-box{background:var(--ink);border-radius:var(--r-sm);padding:16px;margin:10px 0}
+.prompt-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.prompt-label.bad{color:#fca5a5}.prompt-label.good{color:#86efac}.prompt-label.better{color:#c4b5fd}
+.prompt-text{font-family:'JetBrains Mono',monospace;font-size:13px;color:#e2e8f0;line-height:1.7;white-space:pre-wrap}
+.wm-footer{background:var(--ink);color:#64748b;text-align:center;padding:26px;font-size:13px;border-top:3px solid var(--violet);font-family:sans-serif}
+.wm-footer strong{color:#e2e8f0}
+.wm-corner{position:fixed;bottom:16px;right:16px;background:rgba(13,17,23,.85);color:#c4b5fd;font-size:11px;font-weight:700;letter-spacing:.06em;padding:7px 14px;border-radius:999px;border:1px solid rgba(196,181,253,.25);backdrop-filter:blur(6px);z-index:9999;pointer-events:none;font-family:sans-serif}
+@media print{.wm-corner{display:none}.nav{display:none}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-inner">
+<div class="hero-badge">ML Teaching Series</div>
+<h1>Large Language Models &amp;<br><em>Prompt Engineering</em></h1>
+<p>What LLMs are, how they\u2019re trained, what they can and can\u2019t do, and how to talk to them effectively.</p>
+</div></header>
+<nav class="nav">
+<a href="#s0">What is an LLM?</a><a href="#s1">How They Work</a><a href="#s2">Training</a><a href="#s3">Expectations</a><a href="#s4">Hallucinations</a><a href="#s5">Multi-Modal</a><a href="#s6">Prompt Eng.</a><a href="#s7">Parameters</a><a href="#s8">Techniques</a><a href="#s8b">Advanced</a><a href="#s9">Ethics</a><a href="#s10">Cheat Sheet</a>
+</nav>
+<main>
+
+<!-- 0: WHAT IS AN LLM -->
+<section class="section" id="s0">
+<div class="sec-head"><div class="sec-num">0</div><h2>What is a Large Language Model?</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Breaking Down "LLM"</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0;">
+<div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:14px;text-align:center;border:1.5px solid #c4b5fd;">
+<div style="font-family:'Bitter',serif;font-size:1.1rem;font-weight:700;color:var(--violet);margin-bottom:4px;">Large</div>
+<p style="font-size:12.5px;color:var(--ink2);">Billions of parameters. Trained on massive internet-scale datasets.</p>
+</div>
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:14px;text-align:center;border:1.5px solid #93c5fd;">
+<div style="font-family:'Bitter',serif;font-size:1.1rem;font-weight:700;color:var(--blue);margin-bottom:4px;">Language</div>
+<p style="font-size:12.5px;color:var(--ink2);">Takes text in, produces text out. Understands human language patterns.</p>
+</div>
+<div style="background:var(--green-pale);border-radius:var(--r-sm);padding:14px;text-align:center;border:1.5px solid #86efac;">
+<div style="font-family:'Bitter',serif;font-size:1.1rem;font-weight:700;color:var(--green);margin-bottom:4px;">Model</div>
+<p style="font-size:12.5px;color:var(--ink2);">A mathematical function that predicts the next token given previous tokens.</p>
+</div>
+</div>
+<p>At its core, an LLM does one thing: given a sequence of words, predict the most likely next word. It does this with the Transformer architecture you already learned.</p>
+<div class="code"><span class="cm">// What an LLM computes:</span>
+P(next_word | "The cat sat on the") &#8594; "mat" (0.32), "floor" (0.21)...
+
+<span class="cm">// Pick most probable, append, repeat:</span>
+"The cat sat on the" &#8594; <span class="hi">"mat"</span>
+"The cat sat on the mat" &#8594; <span class="hi">"and"</span>
+"The cat sat on the mat and" &#8594; <span class="hi">"purred"</span></div>
+<div class="callout co-violet">Everything from ChatGPT, Claude, or Gemini is next-token prediction repeated thousands of times. The magic is in the scale.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy</div>
+<h3>The World's Best Autocomplete</h3>
+<p>Your phone keyboard predicts the next word. An LLM is the same concept trained on trillions of words &#8212; giving it near-human ability to continue any text.</p>
+<p>Phone: "How are" &#8594; "you"</p>
+<p>LLM: "Explain quantum entanglement to a 5-year-old" &#8594; coherent multi-paragraph explanation.</p>
+<div style="overflow-x:auto;margin-top:12px;">
+<table class="cmp-table">
+<tr><th>Model</th><th>Parameters</th><th>Training Data</th></tr>
+<tr><td>GPT-2 (2019)</td><td>1.5B</td><td>40GB text</td></tr>
+<tr><td>GPT-3 (2020)</td><td>175B</td><td>570GB text</td></tr>
+<tr><td>GPT-4 (2023)</td><td>~1.8T (est.)</td><td>~13T tokens</td></tr>
+<tr><td>Llama 3 (2024)</td><td>70B</td><td>15T tokens</td></tr>
+</table></div>
+</div></div>
+</section>
+
+<!-- 1: HOW THEY WORK -->
+<section class="section" id="s1">
+<div class="sec-head"><div class="sec-num">1</div><h2>How LLMs Work &#8212; Under the Hood</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Architecture</div>
+<p>LLMs use the <strong>decoder-only Transformer</strong> from the previous lecture:</p>
+<div class="code"><span class="cm">// GPT architecture:</span>
+Input tokens &#8594; <span class="hi">Embeddings + Position</span>
+&#8594; <span class="kw">Masked Self-Attention</span> (causal)
+&#8594; <span class="kw">Feed-Forward Network</span>
+&#8594; <span class="kw">Add &amp; Norm</span>
+&#8594; Repeat &#215; <span class="mn">96 layers</span>
+&#8594; <span class="gn">Linear + Softmax &#8594; next token</span></div>
+<div class="callout co-blue" style="margin-bottom:6px;"><strong>Decoder-only:</strong> No encoder. The model only generates.</div>
+<div class="callout co-blue" style="margin-bottom:6px;"><strong>Massive scale:</strong> GPT-3 has 96 layers, 96 heads, d=12,288.</div>
+<div class="callout co-blue"><strong>Autoregressive:</strong> One token at a time, feeding each output back as input.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy</div>
+<h3>Writing a Story One Word at a Time</h3>
+<p>Imagine writing a novel where you can only see what you've written &#8212; never the ending. At each word: "Given everything so far, what's the best next word?"</p>
+<p>Because it trained on so much text, its "best guesses" create coherent paragraphs, arguments, and code.</p>
+<div class="callout co-amber">&#128161; LLMs don't "think." They are sophisticated pattern matchers that absorbed the statistical structure of human language.</div>
+</div></div>
+</section>
+
+<!-- 2: TRAINING -->
+<section class="section" id="s2">
+<div class="sec-head"><div class="sec-num">2</div><h2>Training Pipeline &#8212; 3 Stages</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; From Raw Internet to ChatGPT</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:14px 0;">
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #93c5fd;">
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--blue);margin-bottom:8px;">Stage 1: Pre-training</div>
+<p style="font-size:13px;color:var(--ink2);margin-bottom:8px;">Train on massive text. Learn grammar, facts, reasoning by predicting next token trillions of times.</p>
+<div style="font-size:12px;color:var(--ink3);"><strong>Data:</strong> Books, Wikipedia, web, code<br><strong>Cost:</strong> $2M&#8211;$100M+<br><strong>Output:</strong> Foundation model</div>
+</div>
+<div style="background:var(--green-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #86efac;">
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--green);margin-bottom:8px;">Stage 2: Fine-Tuning (SFT)</div>
+<p style="font-size:13px;color:var(--ink2);margin-bottom:8px;">Train on curated (prompt, ideal_response) pairs. Model learns to follow instructions.</p>
+<div style="font-size:12px;color:var(--ink3);"><strong>Data:</strong> ~100K quality examples<br><strong>Cost:</strong> Human labelers<br><strong>Output:</strong> SFT model</div>
+</div>
+<div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #c4b5fd;">
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--violet);margin-bottom:8px;">Stage 3: RLHF</div>
+<p style="font-size:13px;color:var(--ink2);margin-bottom:8px;">Humans rank outputs. Reward model learns preferences. LLM optimized for human preference.</p>
+<div style="font-size:12px;color:var(--ink3);"><strong>Data:</strong> Ranked responses<br><strong>Method:</strong> PPO reinforcement learning<br><strong>Output:</strong> Aligned LLM</div>
+</div>
+</div>
+<div class="callout co-violet"><strong>RLHF separates GPT-3 from ChatGPT.</strong> GPT-3 completes text but can be toxic. RLHF teaches it to be conversational, safe, and useful.</div>
+</div></div>
+</section>
+
+<!-- 3: EXPECTATIONS -->
+<section class="section" id="s3">
+<div class="sec-head"><div class="sec-num">3</div><h2>What LLMs Can and Cannot Do</h2></div>
+<div class="two-col">
+<div class="card card-g">
+<div class="lbl" style="color:var(--green);">&#10004; What to Expect</div>
+<div style="font-size:14.5px;color:var(--ink2);line-height:2;">
+<strong>Articulation</strong> &#8212; fluent, well-structured writing in any style<br>
+<strong>General knowledge</strong> &#8212; broad understanding across topics<br>
+<strong>Creativity</strong> &#8212; brainstorming, diverse perspectives<br>
+<strong>Translation</strong> &#8212; between languages, registers, formats<br>
+<strong>Code generation</strong> &#8212; writing, debugging, explaining<br>
+<strong>Summarization</strong> &#8212; condensing long documents</div>
+</div>
+<div class="card card-r">
+<div class="lbl" style="color:var(--rose);">&#128683; What NOT to Expect</div>
+<div style="font-size:14.5px;color:var(--ink2);line-height:2;">
+<strong>Consistent accuracy</strong> &#8212; may state wrong facts confidently<br>
+<strong>Domain expertise</strong> &#8212; no deep niche field knowledge<br>
+<strong>Mathematics</strong> &#8212; arithmetic and multi-step reasoning<br>
+<strong>Real-time info</strong> &#8212; knowledge has a training cutoff<br>
+<strong>Guardrails</strong> &#8212; can be manipulated into harmful output<br>
+<strong>Source citation</strong> &#8212; may fabricate references</div>
+</div></div>
+</section>
+
+<!-- 4: HALLUCINATIONS -->
+<section class="section" id="s4">
+<div class="sec-head"><div class="sec-num">4</div><h2>Hallucinations &#8212; When LLMs Lie Confidently</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; What Are Hallucinations?</div>
+<p>Text that sounds plausible and is well-articulated but is <strong>factually incorrect</strong>.</p>
+<div class="prompt-box">
+<div class="prompt-label bad">&#10060; Hallucination Example</div>
+<div class="prompt-text"><span class="mn">Prompt:</span> Who first walked on the moon?
+
+<span class="ro">LLM:</span> Buzz Aldrin is widely recognized as the
+first person to walk on the moon...
+
+<span class="cm">// Confidently wrong! It was Neil Armstrong.</span></div>
+</div>
+<p style="margin-top:10px;font-size:14px;color:var(--ink3);">LLMs optimize for <em>plausibility</em>, not <em>truth</em>. They pick tokens that sound right &#8212; no fact-checking built in.</p>
+<div class="callout co-rose"><strong>Mitigation:</strong> Verify facts. Use RAG (next week!). Lower temperature. Ask for sources then check them.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; The Confident Bluffer</div>
+<p>A student who hasn't studied but speaks perfectly. Confident tone, perfect grammar &#8212; but making it all up. You'd never guess they're wrong from how they <em>sound</em>.</p>
+<p>LLMs learned the <strong>pattern</strong> of correct answers, not the actual facts.</p>
+</div></div>
+</section>
+
+<!-- 5: MULTI-MODAL -->
+<section class="section" id="s5">
+<div class="sec-head"><div class="sec-num">5</div><h2>Multi-Modal LLMs</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Beyond Text</div>
+<p>Multi-modal LLMs process <strong>multiple data types</strong> &#8212; not just text.</p>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;">
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:12px;border:1.5px solid #93c5fd;text-align:center;">
+<div style="font-size:1.5rem;">&#128247; &#8594; &#128221;</div>
+<div style="font-size:13px;font-weight:600;color:var(--blue);">Image &#8594; Text</div>
+<div style="font-size:12px;color:var(--ink3);">"Describe this photo"</div>
+</div>
+<div style="background:var(--green-pale);border-radius:var(--r-sm);padding:12px;border:1.5px solid #86efac;text-align:center;">
+<div style="font-size:1.5rem;">&#128221; &#8594; &#127912;</div>
+<div style="font-size:13px;font-weight:600;color:var(--green);">Text &#8594; Image</div>
+<div style="font-size:12px;color:var(--ink3);">DALL-E, Midjourney</div>
+</div>
+<div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:12px;border:1.5px solid #c4b5fd;text-align:center;">
+<div style="font-size:1.5rem;">&#127925; &#8594; &#128221;</div>
+<div style="font-size:13px;font-weight:600;color:var(--violet);">Audio &#8594; Text</div>
+<div style="font-size:12px;color:var(--ink3);">Whisper, Gemini</div>
+</div>
+<div style="background:var(--amber-pale);border-radius:var(--r-sm);padding:12px;border:1.5px solid #fcd34d;text-align:center;">
+<div style="font-size:1.5rem;">&#127909; &#8594; &#128221;</div>
+<div style="font-size:13px;font-weight:600;color:var(--amber);">Video &#8594; Text</div>
+<div style="font-size:12px;color:var(--ink3);">Gemini 1.5 Pro</div>
+</div>
+</div>
+<div class="callout co-blue"><strong>GPT-4, Claude, Gemini</strong> are all multi-modal &#8212; they can take images as input alongside text.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; From Reading to All Five Senses</div>
+<p>Original LLMs could only "read." Multi-modal LLMs have <strong>eyes and ears</strong>. Show it a photo and ask "What breed?" &#8212; it answers. Play audio &#8212; it transcribes.</p>
+</div></div>
+</section>
+
+<!-- 6: PROMPT ENGINEERING -->
+<section class="section" id="s6">
+<div class="sec-head"><div class="sec-num">6</div><h2>Prompt Engineering &#8212; Talking to LLMs</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; What is Prompt Engineering?</div>
+<p><strong>Prompt:</strong> Instructions sent to an LLM to accomplish a task.</p>
+<p><strong>Engineering:</strong> Iteratively refining that prompt until the output is right.</p>
+<div class="prompt-box"><div class="prompt-label bad">&#10060; Vague Prompt</div>
+<div class="prompt-text">Tell me about dogs.</div></div>
+<div class="prompt-box"><div class="prompt-label good">&#10004; Engineered Prompt</div>
+<div class="prompt-text">Write a 200-word blog post about the top 3 health
+benefits of owning a dog, targeting first-time pet
+owners, in a warm conversational tone. Include one
+statistic per benefit.</div></div>
+<div class="callout co-green">Same model, same topic &#8212; but the engineered prompt controls behavior, constrains output, and improves quality.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Ordering at a Restaurant</div>
+<p><strong>Bad:</strong> "Give me food." &#8212; you'll get <em>something</em>.</p>
+<p><strong>Good:</strong> "Grilled salmon, medium-rare, steamed veg instead of fries, no sauce, gluten-free." &#8212; you get exactly what you want.</p>
+<p>The kitchen (LLM) is talented but needs clear, specific instructions.</p>
+</div></div>
+</section>
+
+<!-- 7: PARAMETERS -->
+<section class="section" id="s7">
+<div class="sec-head"><div class="sec-num">7</div><h2>LLM Parameters &#8212; Tuning the Output</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; Sampling Parameters &#8212; Control HOW tokens are selected</div>
+<div class="param-grid">
+<div class="param-card" style="border-color:#c4b5fd;">
+<div class="param-name">&#127777; Temperature</div>
+<div class="param-desc">Controls randomness by scaling the logits before softmax. Lower = sharper distribution (more deterministic). Higher = flatter distribution (more creative/random).</div>
+<div class="param-val">0.0 = greedy (always picks #1 token)<br>0.7 = balanced (default for most APIs)<br>1.0 = full distribution<br>1.5+ = very random, may lose coherence</div>
+</div>
+<div class="param-card" style="border-color:#93c5fd;">
+<div class="param-name">&#127919; Top P (Nucleus Sampling)</div>
+<div class="param-desc">Only considers the smallest set of tokens whose cumulative probability exceeds P. Cuts off the long tail of unlikely tokens dynamically.</div>
+<div class="param-val">top_p=0.1 &#8594; only top ~10% probability mass<br>top_p=0.9 &#8594; considers most tokens (default)<br>top_p=1.0 &#8594; considers all tokens<br><em>Use either temp OR top_p, not both</em></div>
+</div>
+<div class="param-card" style="border-color:#86efac;">
+<div class="param-name">&#127922; Top K</div>
+<div class="param-desc">Only considers the K most probable next tokens. Hard cutoff &#8212; simpler than Top P. Used in Gemini, Claude, and open-source models.</div>
+<div class="param-val">top_k=1 &#8594; greedy (same as temp=0)<br>top_k=10 &#8594; choose from top 10 tokens<br>top_k=40 &#8594; moderate diversity (common)<br>top_k=0 &#8594; disabled (consider all)</div>
+</div>
+<div class="param-card" style="border-color:#fbbf24;">
+<div class="param-name">&#127906; Seed</div>
+<div class="param-desc">Sets the random number generator seed. Same seed + same prompt = same output. Essential for reproducible experiments and testing.</div>
+<div class="param-val">seed=42 &#8594; deterministic output<br>seed=None &#8594; different each time<br><em>Not all APIs support this yet</em></div>
+</div>
+</div>
+
+<div class="lbl lbl-tech" style="margin-top:20px;">&#9881; Output Control Parameters</div>
+<div class="param-grid">
+<div class="param-card" style="border-color:#86efac;">
+<div class="param-name">&#128207; Max Tokens</div>
+<div class="param-desc">Maximum number of tokens the model will generate. Does NOT guarantee that length &#8212; it's a ceiling. 1 token &#8776; &#190; of a word in English.</div>
+<div class="param-val">50 &#8594; short answer<br>500 &#8594; paragraph<br>4096 &#8594; full essay<br>128,000 &#8594; GPT-4o context window</div>
+</div>
+<div class="param-card" style="border-color:#f87171;">
+<div class="param-name">&#9209; Stop Sequences</div>
+<div class="param-desc">Generation stops immediately when any stop sequence is produced. Prevents the model from rambling or generating past a natural boundary.</div>
+<div class="param-val">stop=["\\n"] &#8594; stop at newline<br>stop=["END"] &#8594; stop at custom marker<br>stop=["\\n\\n", "###"] &#8594; multiple triggers<br><em>Critical for structured extraction</em></div>
+</div>
+<div class="param-card" style="border-color:#c4b5fd;">
+<div class="param-name">&#128172; Echo</div>
+<div class="param-desc">Returns the prompt alongside the completion in the API response. Useful for debugging &#8212; see exactly what the model received as input.</div>
+<div class="param-val">echo=true &#8594; response includes prompt<br>echo=false &#8594; only new tokens (default)<br><em>OpenAI completions API only</em><br><em>Chat API uses messages instead</em></div>
+</div>
+<div class="param-card" style="border-color:#93c5fd;">
+<div class="param-name">&#128202; Logprobs</div>
+<div class="param-desc">Returns the log probability of each generated token and its top alternatives. Essential for understanding model confidence and debugging.</div>
+<div class="param-val">logprobs=5 &#8594; show top 5 alternatives<br>logprobs=null &#8594; disabled (default)<br><em>High logprob = model is confident</em><br><em>Low logprob = model is guessing</em></div>
+</div>
+</div>
+
+<div class="lbl lbl-tech" style="margin-top:20px;">&#9881; Repetition &amp; Penalty Parameters</div>
+<div class="param-grid">
+<div class="param-card" style="border-color:#fcd34d;">
+<div class="param-name">&#128260; Frequency Penalty</div>
+<div class="param-desc">Penalizes tokens <em>proportionally</em> to how often they've appeared. Higher = stronger penalty on repeated words. Reduces exact repetition.</div>
+<div class="param-val">0.0 = no penalty (may repeat a lot)<br>0.5 = light penalty<br>1.0 = moderate (good default)<br>2.0 = strong (very diverse vocabulary)</div>
+</div>
+<div class="param-card" style="border-color:#f59e0b;">
+<div class="param-name">&#128161; Presence Penalty</div>
+<div class="param-desc">Penalizes tokens that have appeared <em>at all</em>, regardless of count. Encourages the model to introduce new topics rather than staying on one.</div>
+<div class="param-val">0.0 = no penalty<br>0.6 = encourages topic diversity<br>2.0 = strongly pushes new topics<br><em>Frequency = how often. Presence = at all.</em></div>
+</div>
+<div class="param-card" style="border-color:#c4b5fd;">
+<div class="param-name">&#128218; System Message</div>
+<div class="param-desc">Sets the model's persona, rules, and constraints for the entire conversation. Persists across all turns. The most powerful prompting lever.</div>
+<div class="param-val">role: "system"<br>content: "You are a helpful medical assistant. Never give diagnoses. Always recommend consulting a doctor."</div>
+</div>
+<div class="param-card" style="border-color:#5eead4;">
+<div class="param-name">&#128203; Response Format</div>
+<div class="param-desc">Forces structured output format. GPT-4 supports JSON mode. Guarantees parseable output for programmatic use.</div>
+<div class="param-val">response_format={"type":"json_object"}<br><em>Must also instruct "respond in JSON"</em><br><em>in the prompt itself</em></div>
+</div>
+</div>
+
+<div style="margin-top:16px;overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Task</th><th style="background:var(--violet);">Temperature</th><th style="background:var(--violet);">Top P/K</th><th style="background:var(--violet);">Other</th></tr>
+<tr><td><strong>Code generation</strong></td><td>0.0&#8211;0.2</td><td>top_p=0.1</td><td>stop=["```"]</td></tr>
+<tr><td><strong>Factual Q&amp;A</strong></td><td>0.0</td><td>top_k=1</td><td>max_tokens=200</td></tr>
+<tr><td><strong>Creative writing</strong></td><td>0.8&#8211;1.0</td><td>top_p=0.9</td><td>presence_penalty=0.6</td></tr>
+<tr><td><strong>Data extraction</strong></td><td>0.0</td><td>top_p=0.1</td><td>response_format=json</td></tr>
+<tr><td><strong>Brainstorming</strong></td><td>1.0&#8211;1.3</td><td>top_k=50</td><td>frequency_penalty=1.0</td></tr>
+<tr><td><strong>Chatbot</strong></td><td>0.7</td><td>top_p=0.9</td><td>system message + stop</td></tr>
+</table>
+</div>
+<div class="callout co-amber"><strong>Golden rule:</strong> Don't use Temperature and Top P together &#8212; they both control randomness and can interfere. Pick one. For most use cases, Temperature alone is sufficient.</div>
+</div></div>
+</section>
+
+<!-- 8: TECHNIQUES -->
+<section class="section" id="s8">
+<div class="sec-head"><div class="sec-num">8</div><h2>Prompt Engineering Techniques</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Foundational Techniques</div>
+<div style="margin-bottom:14px;">
+<div style="font-weight:700;color:var(--violet);font-size:14px;margin-bottom:6px;">1. Zero-Shot</div>
+<div class="prompt-box"><div class="prompt-label good">Direct instruction, no examples</div>
+<div class="prompt-text">Classify sentiment as positive/negative/neutral:
+"The food was great but service was slow."</div></div></div>
+
+<div style="margin-bottom:14px;">
+<div style="font-weight:700;color:var(--violet);font-size:14px;margin-bottom:6px;">2. Few-Shot</div>
+<div class="prompt-box"><div class="prompt-label better">Provide examples first</div>
+<div class="prompt-text">"Amazing product!" &#8594; Positive
+"Terrible." &#8594; Negative
+"It was okay." &#8594; Neutral
+
+"Great food but slow service." &#8594; </div></div></div>
+
+<div style="margin-bottom:14px;">
+<div style="font-weight:700;color:var(--violet);font-size:14px;margin-bottom:6px;">3. Chain-of-Thought (CoT)</div>
+<div class="prompt-box"><div class="prompt-label better">Step-by-step reasoning</div>
+<div class="prompt-text">47 apples, sell 23, receive 35. How many?
+<span class="gn">Think step by step:</span>
+47 - 23 = 24, then 24 + 35 = 59</div></div></div>
+
+<div style="margin-bottom:14px;">
+<div style="font-weight:700;color:var(--violet);font-size:14px;margin-bottom:6px;">4. Role Prompting</div>
+<div class="prompt-box"><div class="prompt-label good">Assign a persona</div>
+<div class="prompt-text"><span class="hi">You are a senior data scientist at a bank.</span>
+Explain why XGBoost beats logistic regression
+for fraud detection.</div></div></div>
+
+<div>
+<div style="font-weight:700;color:var(--violet);font-size:14px;margin-bottom:6px;">5. Constrained Output</div>
+<div class="prompt-box"><div class="prompt-label good">Specify exact format</div>
+<div class="prompt-text">Extract entities. <span class="hi">Respond ONLY in JSON:</span>
+{"persons":[], "locations":[], "orgs":[]}
+
+"Satya Nadella said Microsoft will open
+a new office in Toronto."</div></div></div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; When to Use Each</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th>Technique</th><th>Best For</th></tr>
+<tr><td><strong>Zero-shot</strong></td><td>Simple, well-defined tasks</td></tr>
+<tr><td><strong>Few-shot</strong></td><td>Tasks needing specific format</td></tr>
+<tr><td><strong>Chain-of-thought</strong></td><td>Math, logic, reasoning</td></tr>
+<tr><td><strong>Role prompting</strong></td><td>Domain-specific responses</td></tr>
+<tr><td><strong>Constrained</strong></td><td>Structured output (JSON, CSV)</td></tr>
+</table></div>
+<div class="callout co-amber">&#128161; <strong>Combine them!</strong> "You are a medical coder. Here are 3 examples. Respond only in ICD-10 codes."</div>
+</div></div>
+</section>
+
+<!-- 8b: ADVANCED TECHNIQUES -->
+<section class="section" id="s8b">
+<div class="sec-head"><div class="sec-num">8+</div><h2>Advanced Prompt Techniques</h2></div>
+<div class="two-col">
+
+<!-- ReAct -->
+<div class="card">
+<div class="lbl lbl-tech">&#9881; 6. ReAct (Reasoning + Acting)</div>
+<p>The model alternates between <strong>thinking</strong> (reasoning) and <strong>doing</strong> (taking actions like searching, computing, or calling APIs). Proposed by Yao et al., 2022.</p>
+<div class="prompt-box">
+<div class="prompt-label better">Thought &#8594; Action &#8594; Observation loop</div>
+<div class="prompt-text"><span class="mn">Question:</span> What is the population of the capital of Canada?
+
+<span class="hi">Thought 1:</span> I need to find the capital of Canada first.
+<span class="kw">Action 1:</span> Search("capital of Canada")
+<span class="gn">Observation 1:</span> Ottawa is the capital of Canada.
+
+<span class="hi">Thought 2:</span> Now I need Ottawa's population.
+<span class="kw">Action 2:</span> Search("population of Ottawa")
+<span class="gn">Observation 2:</span> Ottawa has ~1.07 million people.
+
+<span class="hi">Thought 3:</span> I have the answer now.
+<span class="kw">Action 3:</span> Finish("~1.07 million")
+</div></div>
+<div class="callout co-violet"><strong>Why it matters:</strong> Pure CoT can hallucinate facts. ReAct grounds reasoning in real observations by calling tools between reasoning steps. It's how AI agents work.</div>
+</div>
+
+<!-- ReAct analogy -->
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; The Research Student</div>
+<h3>Think, then Google, then Think Again</h3>
+<p>A student solving a homework problem doesn't just think in their head until they get an answer. They:</p>
+<p>1. <strong>Think:</strong> "I need to know Canada's capital"<br>
+2. <strong>Act:</strong> Google it &#8594; find "Ottawa"<br>
+3. <strong>Observe:</strong> Read the result<br>
+4. <strong>Think:</strong> "Now I need Ottawa's population"<br>
+5. <strong>Act:</strong> Google that too<br>
+6. <strong>Answer:</strong> with confidence</p>
+<p>ReAct teaches LLMs to do exactly this &#8212; interleave reasoning with real-world actions instead of guessing everything from memory.</p>
+</div>
+
+<!-- Self-Consistency -->
+<div class="card">
+<div class="lbl lbl-tech">&#9881; 7. Self-Consistency</div>
+<p>Run the same CoT prompt <strong>multiple times</strong> with temperature &gt; 0, then take the <strong>majority vote</strong> of the final answers. Different reasoning paths may reach different conclusions &#8212; the most common one is usually correct.</p>
+<div class="prompt-box">
+<div class="prompt-label better">Same prompt, 5 runs, majority wins</div>
+<div class="prompt-text"><span class="cm">// Q: "Is 17 prime?" &#8212; run 5 times with temp=0.7</span>
+
+<span class="hi">Run 1:</span> 17/2=8.5, 17/3=5.6... no divisors &#8594; <span class="gn">Yes</span>
+<span class="hi">Run 2:</span> Check 2,3,4...16 &#8594; <span class="gn">Yes</span>
+<span class="hi">Run 3:</span> sqrt(17)&#8776;4.1, check 2,3 &#8594; <span class="gn">Yes</span>
+<span class="hi">Run 4:</span> 17=1&#215;17 only &#8594; <span class="gn">Yes</span>
+<span class="hi">Run 5:</span> Odd, not div by 3... &#8594; <span class="gn">Yes</span>
+
+<span class="gn">Majority vote: Yes (5/5) &#10004;</span></div></div>
+<div class="callout co-blue"><strong>When to use:</strong> Math problems, logic puzzles, code debugging &#8212; anywhere a single CoT might take a wrong path. Costs 5&#215; more tokens but dramatically improves accuracy.</div>
+</div>
+
+<!-- Self-Consistency analogy -->
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; Ask 5 Friends</div>
+<p>If you're unsure about a math answer, ask <strong>5 friends to solve it independently</strong>. If 4 out of 5 say "59", and one says "61", you go with 59.</p>
+<p>Each friend might take a different approach (algebra, estimation, calculator), but the majority answer is almost always correct. That's self-consistency &#8212; <strong>wisdom of the crowd applied to reasoning paths</strong>.</p>
+</div>
+
+<!-- Tree of Thought -->
+<div class="card">
+<div class="lbl lbl-tech">&#9881; 8. Tree of Thought (ToT)</div>
+<p>Instead of one linear chain of reasoning, explore <strong>multiple reasoning branches</strong> in parallel, evaluate each branch, then continue only the most promising ones. Like a chess player thinking several moves ahead.</p>
+<div class="code"><span class="cm">// Problem: "Arrange 4, 7, 8, 3 to make 24"</span>
+
+<span class="hi">Branch A:</span> 4 &#215; 7 = 28... 28 - 3 = 25 &#10060; (close but wrong)
+<span class="hi">Branch B:</span> 8 &#215; 3 = 24... done! &#10004; <span class="gn">(8 &#215; 3 = 24)</span>
+<span class="hi">Branch C:</span> 7 + 3 = 10... 10 &#215; 4 = 40 &#10060; (too high)
+
+<span class="cm">// Evaluator picks Branch B &#8594; 8 &#215; 3 = 24 &#10004;</span>
+<span class="cm">// Prune A and C, expand B</span></div>
+<div class="callout co-green"><strong>Key difference from CoT:</strong> CoT = one path forward. ToT = explore a tree of paths, evaluate, prune bad branches, backtrack if needed. Much more powerful for puzzles and planning.</div>
+</div>
+
+<!-- ToT analogy -->
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; Chess Player</div>
+<p>A beginner chess player thinks one move ahead (CoT). A grandmaster thinks <strong>5 moves ahead on 3 different lines</strong>, mentally evaluates each position, and picks the most promising path.</p>
+<p>Tree of Thought gives LLMs that grandmaster-level planning ability: <strong>branch, evaluate, prune, select</strong>.</p>
+</div>
+
+<!-- Reflexion -->
+<div class="card">
+<div class="lbl lbl-tech">&#9881; 9. Reflexion</div>
+<p>The model <strong>critiques its own previous output</strong>, identifies what went wrong, and generates an improved version. A self-improvement loop without any external feedback. Proposed by Shinn et al., 2023.</p>
+<div class="prompt-box">
+<div class="prompt-label better">Generate &#8594; Reflect &#8594; Improve</div>
+<div class="prompt-text"><span class="mn">Task:</span> Write a SQL query to find customers 
+who spent more than $1000 last month.
+
+<span class="hi">Attempt 1:</span>
+SELECT * FROM orders WHERE amount > 1000;
+
+<span class="ro">Reflection:</span> This query has issues:
+- No date filter for "last month"
+- No GROUP BY customer (sums not checked)
+- Should use SUM not individual amounts
+
+<span class="gn">Attempt 2 (improved):</span>
+SELECT customer_id, SUM(amount) as total
+FROM orders
+WHERE order_date >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+GROUP BY customer_id
+HAVING total > 1000;</div></div>
+<div class="callout co-violet"><strong>How it works:</strong> The model acts as both the student AND the teacher. Generate &#8594; critique &#8594; regenerate. Each iteration gets closer to correct. Works especially well for code, writing, and logical reasoning.</div>
+</div>
+
+<!-- Reflexion analogy -->
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; The Self-Grading Student</div>
+<p>After finishing an essay, you <strong>re-read it yourself</strong> with fresh eyes. You notice a weak paragraph, a missing argument, and a typo. You rewrite those parts.</p>
+<p>Reflexion is this self-editing loop: the LLM generates, then asks itself "what's wrong with this?", then fixes the issues. No external reviewer needed &#8212; the model becomes its own critic.</p>
+</div>
+
+<!-- Prompt Chaining -->
+<div class="card">
+<div class="lbl lbl-tech">&#9881; 10. Prompt Chaining</div>
+<p>Break a complex task into <strong>sequential sub-tasks</strong>, where each step's output feeds into the next step's input. Each link in the chain is a focused, simpler prompt.</p>
+<div class="code"><span class="cm">// Complex task: "Summarize this article and translate to French"</span>
+
+<span class="hi">Chain Step 1:</span> "Extract the 5 key points from this article:"
+&#8594; Output: [5 bullet points]
+
+<span class="hi">Chain Step 2:</span> "Write a 100-word summary from these points:"
+&#8594; Output: [English summary]
+
+<span class="hi">Chain Step 3:</span> "Translate this summary to French:"
+&#8594; Output: [French summary]
+
+<span class="cm">// Each step is simple. The chain handles complexity.</span></div>
+<div class="callout co-blue"><strong>Why chain?</strong> A single prompt asking "summarize and translate this 5000-word article to French" often fails. Breaking it into 3 focused steps gives dramatically better results &#8212; each step does one thing well.</div>
+</div>
+
+<!-- Chaining analogy -->
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; Assembly Line</div>
+<p>A car isn't built by one person doing everything. It moves through stations: frame &#8594; engine &#8594; wiring &#8594; paint &#8594; interior. Each station specializes in one task and passes the result forward.</p>
+<p>Prompt chaining is the same: each prompt is a station. Complex tasks that overwhelm a single prompt become manageable when decomposed into focused steps.</p>
+</div>
+
+<!-- MASTER TABLE -->
+<div class="card card-b full">
+<div class="lbl" style="color:var(--blue);">&#128202; Complete Techniques Comparison</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Technique</th><th style="background:var(--violet);">How It Works</th><th style="background:var(--violet);">Best For</th><th style="background:var(--violet);">Cost</th></tr>
+<tr><td><strong>Zero-shot</strong></td><td>Direct instruction, no examples</td><td>Simple tasks</td><td>1&#215;</td></tr>
+<tr><td><strong>Few-shot</strong></td><td>Show examples first</td><td>Format consistency</td><td>1&#215;</td></tr>
+<tr><td><strong>Chain-of-Thought</strong></td><td>"Think step by step"</td><td>Math, logic</td><td>1.5&#215;</td></tr>
+<tr><td><strong>Role Prompting</strong></td><td>Assign persona/expertise</td><td>Domain-specific</td><td>1&#215;</td></tr>
+<tr><td><strong>Constrained</strong></td><td>Force output format</td><td>JSON, structured data</td><td>1&#215;</td></tr>
+<tr><td><strong>ReAct</strong></td><td>Think &#8594; Act &#8594; Observe loop</td><td>Multi-step research, agents</td><td>3&#8211;5&#215;</td></tr>
+<tr><td><strong>Self-Consistency</strong></td><td>Run N times, majority vote</td><td>Math, critical decisions</td><td>N&#215;</td></tr>
+<tr><td><strong>Tree of Thought</strong></td><td>Branch, evaluate, prune paths</td><td>Puzzles, planning</td><td>5&#8211;10&#215;</td></tr>
+<tr><td><strong>Reflexion</strong></td><td>Generate &#8594; self-critique &#8594; improve</td><td>Code, writing, debugging</td><td>2&#8211;3&#215;</td></tr>
+<tr><td><strong>Prompt Chaining</strong></td><td>Output of step N &#8594; input of step N+1</td><td>Complex multi-part tasks</td><td>N&#215;</td></tr>
+</table></div>
+<div class="callout co-amber" style="margin-top:10px;">&#128161; <strong>Complexity ladder:</strong> Start with zero-shot. If quality isn't enough, try few-shot. Still not working? Add CoT. Need external data? Use ReAct. Need reliability? Add self-consistency. Match the technique to the difficulty &#8212; don't over-engineer simple tasks.</div>
+</div>
+
+</div>
+</section>
+
+<!-- 9: ETHICS -->
+<section class="section" id="s9">
+<div class="sec-head"><div class="sec-num">9</div><h2>LLM Ethics</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Key Concerns</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin:8px 0;">
+<div style="background:#fff;border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid var(--border);">
+<div style="font-weight:700;color:var(--rose);font-size:14px;">&#9888; Bias Amplification</div>
+<p style="font-size:13px;color:var(--ink2);">LLMs learn from internet data containing societal biases. They can amplify stereotypes.</p></div>
+<div style="background:#fff;border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid var(--border);">
+<div style="font-weight:700;color:var(--rose);font-size:14px;">&#9888; Misinformation at Scale</div>
+<p style="font-size:13px;color:var(--ink2);">Can generate convincing fake news and fabricated citations at unprecedented speed.</p></div>
+<div style="background:#fff;border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid var(--border);">
+<div style="font-weight:700;color:var(--rose);font-size:14px;">&#9888; Privacy &amp; Data Leakage</div>
+<p style="font-size:13px;color:var(--ink2);">May memorize and reproduce personal information from training data.</p></div>
+</div></div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; The Responsible Approach</div>
+<div style="font-size:14.5px;color:var(--ink2);line-height:2;margin:8px 0;">
+<strong>1. Audit outputs</strong> &#8212; test for bias across demographics<br>
+<strong>2. Human-in-the-loop</strong> &#8212; don't fully automate critical decisions<br>
+<strong>3. Transparency</strong> &#8212; disclose AI-generated content<br>
+<strong>4. Guardrails</strong> &#8212; content filters and safety layers<br>
+<strong>5. Diverse training</strong> &#8212; inclusive, representative datasets</div>
+<div class="callout co-violet">The question isn't "can we build this?" but "should we, and how do we do it responsibly?"</div>
+</div></div>
+</section>
+
+<!-- 10: CHEAT SHEET -->
+<section class="section" id="s10">
+<div class="sec-head"><div class="sec-num">&#9733;</div><h2>Cheat Sheet</h2></div>
+<div class="card full">
+<div class="lbl lbl-tech">&#128203; Complete Reference</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="width:18%;background:var(--violet);">Concept</th><th style="width:42%;background:var(--violet);">What It Means</th><th style="width:40%;background:var(--violet);">Key Takeaway</th></tr>
+<tr><td style="font-weight:700;color:var(--violet);">LLM</td><td>Transformer with billions of params trained on internet text</td><td>Next-token prediction. Everything emerges from scale.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Pre-training</td><td>Unsupervised on massive corpus</td><td>Foundation model. Knows a lot but unaligned.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">SFT</td><td>Supervised on (prompt, response) pairs</td><td>Teaches instruction-following.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">RLHF</td><td>Humans rank outputs, model optimizes</td><td>Turns GPT-3 into ChatGPT.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Hallucination</td><td>Confident but factually wrong output</td><td>Optimizes plausibility, not truth. Always verify.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Temperature</td><td>Controls randomness (0=focused, 1+=creative)</td><td>Low for facts. High for creativity.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Zero/Few-shot</td><td>No examples vs. providing examples</td><td>Few-shot improves format and consistency.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Chain-of-Thought</td><td>"Think step by step"</td><td>Essential for math and logic problems.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Multi-modal</td><td>Text + images + audio + video</td><td>GPT-4, Claude, Gemini can "see" images.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">RAG</td><td>Retrieval-Augmented Generation</td><td>Next week! Fixes hallucinations with real documents.</td></tr>
+</table></div>
+</div>
+</section>
+
+</main>
+<footer class="wm-footer">
+<div style="margin-bottom:5px;"><strong>LLMs &amp; Prompt Engineering &#8212; Teaching Guide</strong></div>
+<div>Created by <strong>MR-SRIKANTH</strong> &middot; srikanth.potukuchi@gmail.com</div>
+<div style="margin-top:5px;font-size:11.5px;color:#374151;">&copy; 2025 All rights reserved.</div>
+</footer>
+<div class="wm-corner">&#10022; MR-SRIKANTH</div>
+<script>
+const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('vis')})},{threshold:.06});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
