@@ -1,0 +1,1009 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>RAG — Retrieval Augmented Generation</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Nunito+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{--ink:#1a1a1a;--ink2:#334155;--ink3:#64748b;--blue:#1e40af;--blue-mid:#3b82f6;--blue-pale:#eff6ff;--blue-soft:#dbeafe;--green:#166534;--green-mid:#16a34a;--green-pale:#f0fdf4;--green-soft:#dcfce7;--amber:#92400e;--amber-pale:#fffbeb;--violet:#5b21b6;--violet-pale:#f5f3ff;--rose:#9f1239;--rose-pale:#fff1f2;--teal:#134e4a;--teal-pale:#f0fdfa;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--r:12px;--r-sm:7px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+body{font-family:'Nunito Sans',sans-serif;background:#fff;color:var(--ink);font-size:16px;line-height:1.7}
+.hero{background:linear-gradient(135deg,#1a0533 0%,#3b0764 40%,#6d28d9 100%);color:#fff;padding:52px 36px 44px;text-align:center;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 70%,rgba(139,92,246,.25) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(59,130,246,.15) 0%,transparent 50%)}
+.hero-inner{position:relative;max-width:820px;margin:0 auto}
+.hero-badge{display:inline-block;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#c4b5fd;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;padding:5px 16px;border-radius:999px;margin-bottom:20px}
+.hero h1{font-family:'Bitter',serif;font-size:clamp(2rem,5vw,3.2rem);font-weight:700;line-height:1.12;margin-bottom:14px}
+.hero h1 em{font-style:italic;color:#c4b5fd}
+.hero p{font-size:1.05rem;color:#c4b5fd;max-width:560px;margin:0 auto}
+.nav{background:#fff;border-bottom:1.5px solid var(--border);padding:10px 18px;display:flex;flex-wrap:wrap;gap:6px;justify-content:center;position:sticky;top:0;z-index:200}
+.nav a{font-size:12px;font-weight:600;color:var(--ink3);text-decoration:none;padding:5px 12px;border-radius:999px;border:1px solid var(--border);background:#fff;transition:all .18s;white-space:nowrap}
+.nav a:hover{background:var(--violet);color:#fff;border-color:var(--violet)}
+main{max-width:1100px;margin:0 auto;padding:0 22px 60px}
+.section{margin:48px 0;opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease}
+.section.vis{opacity:1;transform:none}
+.sec-head{display:flex;align-items:center;gap:14px;margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--border)}
+.sec-num{width:40px;height:40px;border-radius:50%;background:var(--violet);color:#fff;font-family:'Bitter',serif;font-size:1.1rem;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sec-head h2{font-family:'Bitter',serif;font-size:clamp(1.2rem,3vw,1.55rem);font-weight:700}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}.full{grid-column:1/-1}
+@media(max-width:720px){.two-col{grid-template-columns:1fr}}
+.card{border-radius:var(--r);padding:22px;border:1.5px solid var(--border);background:#fff}
+.card-a{background:var(--amber-pale);border-color:#fcd34d}.card-v{background:var(--violet-pale);border-color:#c4b5fd}
+.card-b{background:var(--blue-pale);border-color:#93c5fd}.card-g{background:var(--green-pale);border-color:#86efac}
+.card-r{background:var(--rose-pale);border-color:#fca5a5}
+.lbl{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px}
+.lbl-tech{color:var(--violet)}.lbl-an{color:var(--amber)}
+.card h3{font-family:'Bitter',serif;font-size:1.05rem;font-weight:700;margin-bottom:8px}
+.card p{font-size:15px;color:var(--ink2);margin-bottom:8px}.card p:last-child{margin-bottom:0}
+.code{background:var(--ink);color:#e2e8f0;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75;border-radius:var(--r-sm);padding:14px 16px;overflow-x:auto;margin:8px 0;white-space:pre-wrap}
+.code .hi{color:#a78bfa;font-weight:600}.code .mn{color:#fde68a}.code .ro{color:#fca5a5}.code .cm{color:#475569}.code .kw{color:#93c5fd}.code .gn{color:#86efac}
+.callout{border-radius:var(--r-sm);padding:12px 16px;font-size:14px;margin:8px 0}
+.co-blue{background:var(--blue-soft);border-left:4px solid var(--blue);color:#1e3a8a}
+.co-green{background:var(--green-soft);border-left:4px solid var(--green-mid);color:#14532d}
+.co-amber{background:#fef3c7;border-left:4px solid #f59e0b;color:#78350f}
+.co-rose{background:var(--rose-pale);border-left:4px solid #f43f5e;color:#881337}
+.co-violet{background:var(--violet-pale);border-left:4px solid var(--violet);color:#3b0764}
+.cmp-table{width:100%;border-collapse:collapse;font-size:14px;margin:10px 0}
+.cmp-table th{background:var(--ink);color:#fff;padding:9px 12px;text-align:left;font-weight:600;font-size:12px}
+.cmp-table th:first-child{border-radius:8px 0 0 0}.cmp-table th:last-child{border-radius:0 8px 0 0}
+.cmp-table td{padding:9px 12px;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:top}
+.cmp-table tr:nth-child(even) td{background:var(--surface2)}
+.cmp-table .yes{color:var(--green-mid);font-weight:700}.cmp-table .no{color:var(--rose);font-weight:700}
+.param-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+@media(max-width:600px){.param-grid{grid-template-columns:1fr}}
+.param-card{border-radius:var(--r-sm);padding:14px;border:1.5px solid var(--border);background:#fff}
+.param-name{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;color:var(--violet);margin-bottom:4px}
+.param-desc{font-size:13px;color:var(--ink2);line-height:1.5}
+.param-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ink3);margin-top:4px}
+.prompt-box{background:var(--ink);border-radius:var(--r-sm);padding:16px;margin:10px 0}
+.prompt-label{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.prompt-label.bad{color:#fca5a5}.prompt-label.good{color:#86efac}.prompt-label.better{color:#c4b5fd}
+.prompt-text{font-family:'JetBrains Mono',monospace;font-size:13px;color:#e2e8f0;line-height:1.7;white-space:pre-wrap}
+.wm-footer{background:var(--ink);color:#64748b;text-align:center;padding:26px;font-size:13px;border-top:3px solid var(--violet);font-family:sans-serif}
+.wm-footer strong{color:#e2e8f0}
+.wm-corner{position:fixed;bottom:16px;right:16px;background:rgba(13,17,23,.85);color:#c4b5fd;font-size:11px;font-weight:700;letter-spacing:.06em;padding:7px 14px;border-radius:999px;border:1px solid rgba(196,181,253,.25);backdrop-filter:blur(6px);z-index:9999;pointer-events:none;font-family:sans-serif}
+@media print{.wm-corner{display:none}.nav{display:none}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-inner">
+<div class="hero-badge">ML Teaching Series</div>
+<h1>Retrieval Augmented<br><em>Generation (RAG)</em></h1>
+<p>Give LLMs access to your documents. Ground answers in real data. Eliminate hallucinations.</p>
+</div></header>
+<nav class="nav">
+<a href="#s0">Why RAG?</a><a href="#s1">Architecture</a><a href="#s2">Building Blocks</a><a href="#s3">Chunking</a><a href="#s4">Embeddings</a><a href="#s5">Vector DBs</a><a href="#s6">Semantic Search</a><a href="#s7">Worked Example</a><a href="#s8">Cloud RAG</a><a href="#s9">Prompt Design</a><a href="#s10">Tuning</a><a href="#s11">Open-Source</a><a href="#s12">Evaluation</a><a href="#s14">Advanced</a><a href="#s13">Cheat Sheet</a>
+</nav>
+<main>
+
+<!-- 0: WHY RAG -->
+<section class="section" id="s0">
+<div class="sec-head"><div class="sec-num">0</div><h2>Why Do We Need RAG?</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; The Problem RAG Solves</div>
+<p>LLMs have two fundamental limitations:</p>
+<div class="prompt-box"><div class="prompt-label bad">&#10060; Problem 1 &#8212; Knowledge Cutoff</div>
+<div class="prompt-text"><span class="mn">User:</span> How many CUDA cores does the NVIDIA RTX 5070 Ti have?
+<span class="ro">LLM:</span> I don't have information on that, as my training data goes up until 2023.</div></div>
+<div class="prompt-box"><div class="prompt-label bad">&#10060; Problem 2 &#8212; No Private Data</div>
+<div class="prompt-text"><span class="mn">User:</span> What is our company's refund policy?
+<span class="ro">LLM:</span> I don't have access to your company's specific policies.</div></div>
+<div class="prompt-box"><div class="prompt-label good">&#10004; RAG Solution</div>
+<div class="prompt-text"><span class="mn">User:</span> How many CUDA cores does the RTX 5070 Ti have?
+<span class="kw">RAG retrieves:</span> [NVIDIA spec sheet chunk about RTX 5070 Ti]
+<span class="gn">LLM + Context:</span> The RTX 5070 Ti has 8960 CUDA cores with a boost clock of 2300 MHz.</div></div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Analogy &#8212; Open-Book Exam</div>
+<h3>From Closed-Book to Open-Book</h3>
+<p>A plain LLM is a <strong>closed-book exam</strong> &#8212; answers only from memory. RAG turns it into an <strong>open-book exam</strong> &#8212; the student can find the relevant page and base their answer on it.</p>
+<div class="callout co-violet"><strong>RAG = Retrieval + LLM.</strong> The LLM's ability stays the same. We just give it the right information at the right time.</div>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Why Not Just Fine-Tune?</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--rose);">Fine-Tuning</th><th style="background:var(--green);">RAG</th></tr>
+<tr><td>Changes model weights</td><td>Leaves model unchanged</td></tr>
+<tr><td>Expensive retraining ($$$)</td><td>Cheap indexing</td></tr>
+<tr><td>Static knowledge</td><td>Dynamic &#8212; re-index anytime</td></tr>
+<tr><td>Hard to update</td><td>Update = re-index one PDF</td></tr>
+<tr><td>Risk of catastrophic forgetting</td><td>No forgetting</td></tr>
+</table></div>
+</div>
+<div>
+<p style="font-size:14px;color:var(--ink2);"><strong>Example:</strong> Bank updates mortgage policy today.</p>
+<p style="font-size:14px;color:var(--ink2);"><strong>Fine-tuning:</strong> Retrain model &#8594; redeploy &#8594; hours/days.</p>
+<p style="font-size:14px;color:var(--ink2);"><strong>RAG:</strong> Re-index the PDF &#8594; done &#8594; minutes.</p>
+<div class="callout co-violet" style="margin-top:10px;"><strong>Hallucination reduction formula:</strong> Without RAG, the model computes P(answer | question). With RAG, it computes P(answer | question, retrieved_documents). The model now has <em>evidence</em> to work with.</div>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 1: ARCHITECTURE -->
+<section class="section" id="s1">
+<div class="sec-head"><div class="sec-num">1</div><h2>RAG Architecture &#8212; The Full Pipeline</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; The Pipeline (Two Phases)</div>
+<p style="font-size:14px;color:var(--ink3);margin-bottom:14px;"><strong>Indexing</strong> (prepare docs, done once) and <strong>Querying</strong> (answer questions, per query).</p>
+<div class="code"><span class="cm">// &#9473;&#9473;&#9473; INDEXING PHASE (done once) &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+<span class="hi">&#9312; LOAD</span>        PDF, TXT, HTML, CSV &#8594; raw text
+      &#8595;
+<span class="hi">&#9313; CHUNK</span>       Split into 200-500 token pieces (with overlap)
+      &#8595;
+<span class="hi">&#9314; EMBED</span>       Each chunk &#8594; vector [0.12, 0.85, 0.33, ...]
+      &#8595;
+<span class="hi">&#9315; STORE</span>       Vectors &#8594; Vector Database
+
+<span class="cm">// &#9473;&#9473;&#9473; QUERY PHASE (per user question) &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+<span class="kw">User asks:</span>  "What is the RTX 5070 Ti boost clock?"
+      &#8595;
+<span class="mn">EMBED</span>    query &#8594; vector
+<span class="mn">RETRIEVE</span> top-K closest chunks from Vector DB
+<span class="mn">AUGMENT</span>  stuff chunks into the LLM prompt
+<span class="gn">GENERATE</span> LLM answers using context &#8594; "2300 MHz"</div>
+<div class="callout co-blue"><strong>Correct pipeline sequence:</strong> Data Chunk &#8594; Embedding &#8594; Vector DB &#8594; Retriever &#8594; LLM</div>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Computational Complexity</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<div class="code" style="font-size:12px;"><span class="cm">// Why two phases?</span>
+
+10,000 documents &#215; 500 chunks each
+= <span class="hi">5,000,000 chunks</span>
+
+Brute-force search: <span class="ro">O(N) per query</span>
+&#8594; Too slow for production!
+
+ANN (Approximate Nearest Neighbor):
+<span class="gn">O(log N) per query</span> &#10004;
+
+Expensive work (indexing) done <span class="hi">once</span>.
+Cheap work (querying) done <span class="hi">per question</span>.</div>
+</div>
+<div>
+<p style="font-size:14px;color:var(--ink2);">This is why we split into two phases:</p>
+<p style="font-size:14px;color:var(--ink2);"><strong>Indexing cost:</strong> O(N) &#8212; done once, amortized.</p>
+<p style="font-size:14px;color:var(--ink2);"><strong>Query cost:</strong> O(log N) &#8212; fast, per question.</p>
+<p style="font-size:14px;color:var(--ink2);margin-top:10px;">This also motivates <strong>vector databases</strong> and <strong>ANN algorithms</strong> (HNSW, IVF, Product Quantization) &#8212; they trade a tiny accuracy loss for massive speed gains.</p>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 2: BUILDING BLOCKS -->
+<section class="section" id="s2">
+<div class="sec-head"><div class="sec-num">2</div><h2>Building Blocks of RAG</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; The 5 Components</div>
+<div style="display:flex;flex-direction:column;gap:8px;margin:8px 0;">
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #93c5fd;"><div style="font-weight:700;color:var(--blue);font-size:14px;">&#128196; Document Loader</div><p style="font-size:13px;color:var(--ink2);">Ingests PDFs, websites, databases, APIs. Libraries: LangChain, LlamaIndex, Unstructured.io.</p></div>
+<div style="background:var(--green-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #86efac;"><div style="font-weight:700;color:var(--green);font-size:14px;">&#9986; Text Splitter / Chunker</div><p style="font-size:13px;color:var(--ink2);">Breaks docs into smaller pieces. Controls chunk size and overlap.</p></div>
+<div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #c4b5fd;"><div style="font-weight:700;color:var(--violet);font-size:14px;">&#128300; Embedding Model</div><p style="font-size:13px;color:var(--ink2);">Converts chunks into vectors. OpenAI, Cohere, MiniLM, BGE.</p></div>
+<div style="background:var(--amber-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #fcd34d;"><div style="font-weight:700;color:var(--amber);font-size:14px;">&#128451; Vector Database</div><p style="font-size:13px;color:var(--ink2);">Stores vectors for similarity search. Pinecone, ChromaDB, Weaviate, FAISS, pgvector.</p></div>
+<div style="background:var(--rose-pale);border-radius:var(--r-sm);padding:12px 16px;border:1.5px solid #fca5a5;"><div style="font-weight:700;color:var(--rose);font-size:14px;">&#129302; LLM (Generator)</div><p style="font-size:13px;color:var(--ink2);">Takes query + retrieved context, generates final answer. GPT-4, Claude, Gemini, Llama.</p></div>
+</div></div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; The Research Assistant</div>
+<p><strong>Loader</strong> = collecting textbooks<br><strong>Chunker</strong> = cutting into index cards<br><strong>Embedder</strong> = organizing cards by meaning<br><strong>Vector DB</strong> = the filing cabinet<br><strong>LLM</strong> = the writer who reads cards and writes answers</p>
+<div class="callout co-amber">No single component makes RAG work. It's the <strong>pipeline</strong> that matters.</div>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Metadata Matters</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<p style="font-size:14px;color:var(--ink2);">Every chunk should carry <strong>metadata</strong>. Vector DBs store embeddings + text + metadata, not just vectors:</p>
+<div class="code" style="font-size:12px;"><span class="cm">// Chunk metadata example:</span>
+{
+  "source": "HR_policy.pdf",
+  "page": 12,
+  "section": "Vacation Policy",
+  "last_updated": "2025-01-15"
+}
+
+<span class="cm">// Enables filtered search:</span>
+db.query(q, <span class="hi">filter={"source": "HR_policy.pdf"}</span>)</div>
+</div>
+<div>
+<p style="font-size:14px;color:var(--ink2);"><strong>Retriever vs Generator &#8212; two different problems:</strong></p>
+<p style="font-size:14px;color:var(--ink2);">&#128270; <strong>Retriever</strong> answers: "Where should I look?"</p>
+<p style="font-size:14px;color:var(--ink2);">&#128221; <strong>Generator</strong> answers: "How do I explain it?"</p>
+<div class="callout co-amber" style="margin-top:10px;"><strong>Critical insight:</strong> Most RAG failures are NOT LLM failures. They are <em>retrieval</em> failures. Wrong chunk in &#8594; wrong answer out. The LLM is innocent. Always debug retrieval first.</div>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 3: CHUNKING -->
+<section class="section" id="s3">
+<div class="sec-head"><div class="sec-num">3</div><h2>Chunking &#8212; Breaking Documents Into Pieces</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Chunk Size and Overlap</div>
+<div class="code"><span class="cm">// chunk_size=512, chunk_overlap=16</span>
+
+<span class="hi">Chunk 1:</span> tokens 1&#8211;512
+<span class="hi">Chunk 2:</span> tokens <span class="mn">497&#8211;1008</span>   <span class="cm">&#8592; 16 tokens overlap</span>
+<span class="hi">Chunk 3:</span> tokens <span class="mn">993&#8211;1504</span>   <span class="cm">&#8592; 16 tokens overlap</span>
+
+<span class="cm">// Why overlap? Information might span a boundary.</span>
+<span class="cm">// "The patient was diagnosed with | type 2 diabetes"</span>
+<span class="cm">// Without overlap, Chunk 1 is incomplete.</span></div>
+<div style="overflow-x:auto;margin-top:12px;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Strategy</th><th style="background:var(--violet);">How</th><th style="background:var(--violet);">Best For</th></tr>
+<tr><td><strong>Fixed-size</strong></td><td>Every N tokens + M overlap</td><td>Simple, general</td></tr>
+<tr><td><strong>Sentence</strong></td><td>Split on sentence boundaries</td><td>Preserves thoughts</td></tr>
+<tr><td><strong>Recursive</strong></td><td>Paragraphs &#8594; sentences &#8594; chars</td><td>Most popular</td></tr>
+<tr><td><strong>Semantic</strong></td><td>Split when embedding similarity drops</td><td>Topic-based</td></tr>
+<tr><td><strong>Document</strong></td><td>By headers/sections/pages</td><td>Manuals, legal</td></tr>
+</table></div>
+<div class="callout co-green"><strong>Sweet spot:</strong> 256&#8211;512 tokens, 10&#8211;20% overlap. Test for your data.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Cutting a Novel Into Index Cards</div>
+<p><strong>Too small</strong> (50 tokens) = fragmented, missing context.<br><strong>Too large</strong> (2000 tokens) = too much noise, dilutes signal.</p>
+<p>Overlap is like copying the last sentence of each page onto the next card &#8212; continuity preserved.</p>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Chunking Deep Dive</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Precision vs Recall Tradeoff</p>
+<p style="font-size:13px;color:var(--ink2);">Small chunks &#8594; High precision, low recall (very focused but may miss context).<br>Large chunks &#8594; High recall, low precision (captures more but adds noise).</p>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-top:12px;margin-bottom:6px;">&#9888; Lost in the Middle Problem</p>
+<p style="font-size:13px;color:var(--ink2);">LLMs struggle with info buried deep in long contexts. If you retrieve 20 chunks and the relevant one is ranked #12, the model may ignore it. Recent research (Liu et al., 2023) confirmed this &#8212; models attend most to the beginning and end of context.</p>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Domain-Specific Chunking</p>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Domain</th><th style="background:var(--violet);">Chunk Strategy</th></tr>
+<tr><td><strong>Legal</strong></td><td>Section / clause based</td></tr>
+<tr><td><strong>Medical</strong></td><td>Paragraph based</td></tr>
+<tr><td><strong>Financial reports</strong></td><td>Header / table based</td></tr>
+<tr><td><strong>Source code</strong></td><td>Function / class based</td></tr>
+<tr><td><strong>Chat logs</strong></td><td>Conversation turn based</td></tr>
+<tr><td><strong>Research papers</strong></td><td>Abstract + section based</td></tr>
+</table></div>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 4: EMBEDDINGS -->
+<section class="section" id="s4">
+<div class="sec-head"><div class="sec-num">4</div><h2>Embeddings &#8212; Text to Vectors</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Why Embeddings? (Callback to Week 3)</div>
+<p>We embed <strong>entire chunks</strong> into vectors to search by <em>meaning</em>, not keywords.</p>
+<div class="code"><span class="cm">// Why not keyword search?</span>
+Query: "heart attack symptoms"
+Doc:   "myocardial infarction clinical presentation"
+<span class="ro">Keyword match: 0 words overlap &#10060;</span>
+<span class="gn">Semantic match: cosine sim = 0.89 &#10004;</span>
+
+<span class="cm">// Embeddings capture MEANING</span>
+embed("heart attack symptoms")       = [0.82, 0.15, 0.71, 0.33]
+embed("myocardial infarction signs") = [0.80, 0.18, 0.69, 0.35]
+cosine_similarity = <span class="gn">0.89</span>
+
+embed("stock market crash")          = [0.11, 0.72, 0.05, 0.88]
+cosine_similarity = <span class="ro">0.12</span></div>
+<div style="overflow-x:auto;margin-top:10px;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Model</th><th style="background:var(--violet);">Provider</th><th style="background:var(--violet);">Dims</th><th style="background:var(--violet);">Notes</th></tr>
+<tr><td><strong>text-embedding-3-small</strong></td><td>OpenAI</td><td>1536</td><td>Good default</td></tr>
+<tr><td><strong>all-MiniLM-L6-v2</strong></td><td>HuggingFace</td><td>384</td><td>Free, local</td></tr>
+<tr><td><strong>BGE-large-en</strong></td><td>BAAI</td><td>1024</td><td>Open-source SOTA</td></tr>
+<tr><td><strong>Vertex AI embeddings</strong></td><td>Google</td><td>768</td><td>GCP native</td></tr>
+<tr><td><strong>Titan Embeddings</strong></td><td>AWS</td><td>1536</td><td>Bedrock native</td></tr>
+</table></div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Same Concept, New Scale</div>
+<p>Week 3: Word2Vec embeds <em>words</em>. RAG embeds <em>paragraphs</em>. Same principle: similar meanings &#8594; nearby vectors.</p>
+<p>The embedding model is the <strong>most important RAG choice</strong>. Bad embeddings = bad retrieval = bad answers.</p>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Cosine Similarity Math</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<p style="font-size:14px;color:var(--ink2);">Students should know this formula:</p>
+<div class="code" style="font-size:12px;"><span class="hi">Cosine(A, B) = (A &#183; B) / (|A| &#215; |B|)</span>
+
+Range: [-1, 1]
+For text embeddings: usually [0, 1]
+
+1.0 = identical meaning
+0.0 = unrelated
+-1.0 = opposite meaning (rare in practice)</div>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Why Cosine, Not Euclidean Distance?</p>
+<p style="font-size:13px;color:var(--ink2);">Cosine ignores vector <em>magnitude</em>, only measures <em>direction</em>.</p>
+<div class="code" style="font-size:12px;">[1, 2, 3] and [10, 20, 30]
+
+Euclidean distance: <span class="ro">37.4</span> (far apart!)
+Cosine similarity:  <span class="gn">1.0</span>  (same direction!)
+
+<span class="cm">// Same meaning, different scale.</span>
+<span class="cm">// Cosine captures semantic direction.</span>
+<span class="cm">// Euclidean is misled by magnitude.</span></div>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 5: VECTOR DBS -->
+<section class="section" id="s5">
+<div class="sec-head"><div class="sec-num">5</div><h2>Vector Databases</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Where Vectors Live</div>
+<div class="code"><span class="cm">// Store 10,000 chunk vectors</span>
+vector_db.add(chunks, embeddings, metadata)
+
+<span class="cm">// Find 5 most similar to user's question</span>
+results = vector_db.query(query_embedding, <span class="hi">top_k=5</span>)
+<span class="cm">// Returns 5 chunks ranked by cosine similarity</span></div>
+<div style="overflow-x:auto;margin-top:10px;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Database</th><th style="background:var(--violet);">Type</th><th style="background:var(--violet);">Best For</th></tr>
+<tr><td><strong>ChromaDB</strong></td><td>Open-source, local</td><td>Prototyping</td></tr>
+<tr><td><strong>FAISS</strong></td><td>Library (Meta)</td><td>In-memory, research</td></tr>
+<tr><td><strong>Pinecone</strong></td><td>Managed cloud</td><td>Production, serverless</td></tr>
+<tr><td><strong>Weaviate</strong></td><td>Open + cloud</td><td>Hybrid search</td></tr>
+<tr><td><strong>Qdrant</strong></td><td>Open + cloud</td><td>Filtering, scale</td></tr>
+<tr><td><strong>pgvector</strong></td><td>Postgres extension</td><td>Already using PG</td></tr>
+</table></div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; The Smart Library</div>
+<p>Regular DB = sorted alphabetically. Vector DB = sorted by <strong>meaning</strong>. Ask for "a language for data science" and it finds Python, R, Julia &#8212; no keyword match needed.</p>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; ANN Search Algorithms</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<p style="font-size:14px;color:var(--ink2);">Exact nearest neighbor: O(N) &#8212; check every vector. ANN trades tiny accuracy loss for massive speed:</p>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Algorithm</th><th style="background:var(--violet);">Used By</th><th style="background:var(--violet);">How It Works</th></tr>
+<tr><td><strong>HNSW</strong></td><td>Pinecone, Qdrant, Weaviate</td><td>Multi-level graph. Search starts high, zooms down.</td></tr>
+<tr><td><strong>IVF</strong></td><td>FAISS</td><td>Cluster vectors, only search nearby clusters.</td></tr>
+<tr><td><strong>PQ</strong></td><td>FAISS</td><td>Compress vectors. Less memory, fast comparison.</td></tr>
+</table></div>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">HNSW Intuition</p>
+<p style="font-size:13px;color:var(--ink2);">Imagine finding a restaurant in Toronto:</p>
+<p style="font-size:13px;color:var(--ink2);">Level 3: Canada &#8594; Level 2: Ontario &#8594; Level 1: Toronto &#8594; Level 0: exact neighborhood.</p>
+<p style="font-size:13px;color:var(--ink2);">Start at the top, zoom down. Skip millions of irrelevant vectors. This is how HNSW achieves O(log N) search.</p>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 6: SEMANTIC SEARCH -->
+<section class="section" id="s6">
+<div class="sec-head"><div class="sec-num">6</div><h2>Semantic Search vs Keyword Search</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; The Core Innovation</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:12px 0;">
+<div style="background:var(--rose-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #fca5a5;">
+<div style="font-weight:700;color:var(--rose);font-size:14px;margin-bottom:8px;">&#10060; Keyword Search</div>
+<div class="code" style="font-size:11.5px;">Query: "How to fix a broken heart"
+1. "Heart repair surgery" <span class="cm">&#10060;</span>
+2. "Broken glass cleanup"  <span class="cm">&#10060;</span>
+<span class="cm">// Matches WORDS, not meaning</span></div></div>
+<div style="background:var(--green-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #86efac;">
+<div style="font-weight:700;color:var(--green);font-size:14px;margin-bottom:8px;">&#10004; Semantic Search</div>
+<div class="code" style="font-size:11.5px;">Query: "How to fix a broken heart"
+1. "Coping with emotional pain" <span class="gn">0.91</span>
+2. "Moving on after breakup"   <span class="gn">0.87</span>
+<span class="cm">// Understands INTENT</span></div></div>
+</div>
+<div class="callout co-violet"><strong>Best practice: Hybrid search</strong> &#8212; combine semantic (vector) with keyword (BM25). Weaviate and Pinecone support this natively.</div>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Hybrid Search Formula</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<div class="code" style="font-size:12px;"><span class="cm">// Production hybrid search formula:</span>
+
+<span class="hi">Score = &#945; &#215; BM25(query, doc)</span>
+      <span class="hi">+ (1-&#945;) &#215; Cosine(q_vec, doc_vec)</span>
+
+where &#945; = 0.3 to 0.5 typically
+
+BM25   = keyword relevance (exact matches)
+Cosine = semantic relevance (meaning)</div>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">&#9888; When Semantic Search Fails</p>
+<div class="code" style="font-size:12px;">Query: "Apple"
+
+Could mean:
+&#8226; <span class="gn">The fruit</span> &#127822;
+&#8226; <span class="gn">The company</span> &#127823;
+
+Embeddings may retrieve wrong context.
+<span class="hi">Keyword filters help disambiguate.</span></div>
+<p style="font-size:13px;color:var(--ink3);margin-top:8px;">This is why pure semantic search is rarely used alone in production. Hybrid search catches what embeddings miss.</p>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 7: WORKED EXAMPLE -->
+<section class="section" id="s7">
+<div class="sec-head"><div class="sec-num">7</div><h2>Worked Example &#8212; HR Policy Bot</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; End-to-End Pipeline</div>
+<div class="code"><span class="cm">// &#9473;&#9473;&#9473; INDEXING &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+<span class="hi">Load:</span>    docs = load_pdf("company_handbook.pdf")   <span class="cm"># 200 pages</span>
+<span class="hi">Chunk:</span>   chunks = split(docs, size=512, overlap=50) <span class="cm"># 847 chunks</span>
+<span class="hi">Embed:</span>   vectors = model.encode(chunks)             <span class="cm"># 847 x 1536</span>
+<span class="hi">Store:</span>   db.upsert(vectors, chunks, metadata)       <span class="cm"># indexed</span>
+
+<span class="cm">// &#9473;&#9473;&#9473; QUERYING &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+
+<span class="kw">User:</span> "How many sick days do I get per year?"
+
+<span class="mn">Embed:</span>    q_vec = model.encode(query)
+<span class="mn">Retrieve:</span> top_3 = db.query(q_vec, top_k=3)  <span class="cm"># sim: 0.92, 0.88, 0.81</span>
+
+<span class="mn">Augment:</span>  prompt = "Answer based ONLY on context below.
+           Context: [retrieved chunks]
+           Question: How many sick days?"
+
+<span class="gn">Generate:</span> "Full-time employees receive 12 paid sick days per year."
+
+<span class="cm">// Grounded in actual company policy &#10004;</span></div>
+<div class="callout co-green"><strong>The LLM never saw the handbook during training.</strong> RAG injected relevant chunks at query time. No hallucination possible when the answer comes from your own documents.</div>
+</div></div>
+</section>
+
+<!-- 7b: LANGCHAIN CODE -->
+<section class="section" id="s7b">
+<div class="sec-head"><div class="sec-num">7+</div><h2>LangChain Code Pattern &#8212; What You'll Use in the Case Study</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; Complete LangChain RAG Pipeline (Python)</div>
+<div class="code"><span class="cm"># &#9473;&#9473;&#9473; STEP 1: LOAD PDF &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="kw">from</span> langchain_community.document_loaders <span class="kw">import</span> PyMuPDFLoader
+
+pdf_loader = PyMuPDFLoader(<span class="mn">"apple_hbr.pdf"</span>)
+apple = pdf_loader.load()               <span class="cm"># returns list of Document objects</span>
+<span class="hi">len(apple)</span>                               <span class="cm"># &#8594; 11 pages</span>
+
+<span class="cm"># &#9473;&#9473;&#9473; STEP 2: CHUNK &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="kw">from</span> langchain.text_splitter <span class="kw">import</span> RecursiveCharacterTextSplitter
+
+text_splitter = RecursiveCharacterTextSplitter.from_tiktoken_encoder(
+    encoding_name=<span class="mn">'cl100k_base'</span>,       <span class="cm"># OpenAI's tokenizer</span>
+    chunk_size=<span class="hi">512</span>,                     <span class="cm"># tokens per chunk</span>
+    chunk_overlap=<span class="hi">20</span>                    <span class="cm"># overlap between chunks</span>
+)
+chunks = pdf_loader.load_and_split(text_splitter)
+<span class="hi">len(chunks)</span>                              <span class="cm"># &#8594; ~25-30 chunks from 11 pages</span>
+
+<span class="cm"># &#9473;&#9473;&#9473; STEP 3: EMBED &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="kw">from</span> langchain_community.embeddings <span class="kw">import</span> SentenceTransformerEmbeddings
+
+embedding_model = SentenceTransformerEmbeddings(
+    model_name=<span class="mn">'thenlper/gte-large'</span>    <span class="cm"># 1024-dim vectors</span>
+)
+
+<span class="cm"># &#9473;&#9473;&#9473; STEP 4: STORE IN CHROMADB &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+<span class="kw">from</span> langchain_community.vectorstores <span class="kw">import</span> Chroma
+
+vectorstore = Chroma.from_documents(
+    chunks, embedding_model,
+    persist_directory=<span class="mn">"apple_db"</span>       <span class="cm"># saves to disk</span>
+)
+
+<span class="cm"># &#9473;&#9473;&#9473; STEP 5: CREATE RETRIEVER &#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;&#9473;</span>
+retriever = vectorstore.as_retriever(
+    search_type=<span class="mn">'similarity'</span>,
+    search_kwargs={<span class="mn">'k': 3</span>}            <span class="cm"># return top 3 chunks</span>
+)</div>
+<div class="callout co-blue"><strong>cl100k_base</strong> is OpenAI's tokenizer (used by GPT-4). Using it for chunking ensures token counts match what the LLM will see. <strong>gte-large</strong> is a high-quality open-source embedding model (1024 dims).</div>
+</div></div>
+</section>
+
+<!-- 7c: LOCAL LLMs -->
+<section class="section" id="s7c">
+<div class="sec-head"><div class="sec-num">7++</div><h2>Running LLMs Locally &#8212; No API Needed</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; GGUF Models + llama-cpp-python</div>
+<p>You don't need OpenAI or cloud APIs. Open-source models like <strong>Mistral 7B</strong> can run on your laptop using quantized GGUF format:</p>
+<div class="code"><span class="cm"># Download quantized Mistral 7B from HuggingFace</span>
+<span class="kw">from</span> huggingface_hub <span class="kw">import</span> hf_hub_download
+<span class="kw">from</span> llama_cpp <span class="kw">import</span> Llama
+
+model_path = hf_hub_download(
+    repo_id=<span class="mn">"TheBloke/Mistral-7B-Instruct-v0.2-GGUF"</span>,
+    filename=<span class="mn">"mistral-7b-instruct-v0.2.Q6_K.gguf"</span>
+)
+
+<span class="cm"># Load model (GPU)</span>
+llm = Llama(
+    model_path=model_path,
+    n_ctx=<span class="hi">5000</span>,        <span class="cm"># context window (tokens)</span>
+    n_gpu_layers=<span class="hi">38</span>,   <span class="cm"># layers offloaded to GPU</span>
+    n_batch=512
+)
+
+<span class="cm"># For CPU only:</span>
+<span class="cm"># llm = Llama(model_path=model_path, n_ctx=1024, n_cores=-2)</span></div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; What is GGUF?</div>
+<p><strong>GGUF</strong> (GPT-Generated Unified Format) is a file format for storing quantized LLMs. Quantization shrinks a model from 14GB (full precision) to ~5GB (Q6_K) by using fewer bits per weight.</p>
+<p><strong>Q6_K</strong> means 6-bit quantization &#8212; nearly full quality at 40% the size. Q4_K_M is even smaller but slightly less accurate.</p>
+<p>This lets you run a 7-billion parameter model on a laptop with 8GB RAM. No cloud API, no costs, fully private.</p>
+</div></div>
+</section>
+
+<!-- 7d: PROMPT TEMPLATE -->
+<section class="section" id="s7d">
+<div class="sec-head"><div class="sec-num">7+++</div><h2>Prompt Template Design for RAG</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#9881; System + User Prompt Structure</div>
+<p>The prompt template is how you <strong>inject retrieved context</strong> into the LLM. Two parts: a system message (persona + rules) and a user message (context + question).</p>
+<div class="prompt-box"><div class="prompt-label better">System Prompt &#8212; Set the Rules</div>
+<div class="prompt-text"><span class="hi">system_message = """</span>
+You are an assistant whose work is to review the report
+and provide appropriate answers from the context.
+
+User input will have context beginning with: <span class="mn">###Context</span>
+The context contains references to specific portions of a
+document relevant to the user's question.
+
+User input will also have a question beginning with: <span class="mn">###Question</span>
+
+<span class="gn">Please answer ONLY using the context provided.</span>
+<span class="gn">Do not use any prior knowledge or information.</span>
+If the answer is not found in context, respond:
+"I could not find the answer in the provided context."
+<span class="hi">"""</span></div></div>
+<div class="prompt-box"><div class="prompt-label good">User Prompt &#8212; Context + Question</div>
+<div class="prompt-text"><span class="hi">user_message = """</span>
+<span class="mn">###Context</span>
+Here are some documents relevant to the question:
+<span class="kw">{context}</span>               <span class="cm">&#8592; retrieved chunks injected here</span>
+
+<span class="mn">###Question</span>
+<span class="kw">{question}</span>              <span class="cm">&#8592; user's actual question</span>
+<span class="hi">"""</span></div></div>
+<div class="callout co-violet"><strong>The "answer ONLY from context" instruction is critical.</strong> Without it, the LLM will mix retrieved facts with its own training knowledge &#8212; defeating the purpose of RAG. This is what prevents hallucinations.</div>
+</div></div>
+</section>
+
+<!-- 8: CLOUD RAG -->
+<section class="section" id="s8">
+<div class="sec-head"><div class="sec-num">8</div><h2>RAG on Cloud Platforms</h2></div>
+<div class="two-col">
+<div class="card full">
+<div class="lbl lbl-tech">&#9881; Managed RAG Services</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin:14px 0;">
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #93c5fd;">
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--blue);margin-bottom:8px;">&#9729; Google Cloud (GCP)</div>
+<div style="font-size:13px;color:var(--ink2);">
+<strong>Vertex AI Search</strong> &#8212; end-to-end managed RAG. Upload docs, auto-chunk, embed, index, retrieve.<br><br>
+<strong>Agent Builder</strong> &#8212; no-code RAG with grounding.<br>
+<strong>Vector Search</strong> &#8212; managed ANN service.<br><br>
+<em>Embedding:</em> textembedding-gecko<br>
+<em>LLM:</em> Gemini Pro/Flash<br>
+<em>Vector DB:</em> AlloyDB + pgvector</div>
+</div>
+<div style="background:#fff7ed;border-radius:var(--r-sm);padding:16px;border:1.5px solid #fdba74;">
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--amber);margin-bottom:8px;">&#9729; AWS</div>
+<div style="font-size:13px;color:var(--ink2);">
+<strong>Bedrock Knowledge Bases</strong> &#8212; fully managed RAG. Connect S3 sources, auto-process.<br><br>
+<strong>Kendra</strong> &#8212; enterprise search with ML.<br>
+<strong>OpenSearch</strong> &#8212; vector search at scale.<br><br>
+<em>Embedding:</em> Titan Embeddings<br>
+<em>LLM:</em> Claude, Llama, Titan<br>
+<em>Vector DB:</em> OpenSearch, Aurora pgvector</div>
+</div>
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:16px;border:1.5px solid #93c5fd;">
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--blue);margin-bottom:8px;">&#9729; Microsoft Azure</div>
+<div style="font-size:13px;color:var(--ink2);">
+<strong>AI Search + OpenAI</strong> &#8212; "On Your Data" connects Azure OpenAI to your docs.<br><br>
+<strong>AI Studio</strong> &#8212; visual RAG pipeline builder.<br>
+<strong>Cosmos DB</strong> &#8212; vector search built-in.<br><br>
+<em>Embedding:</em> text-embedding-ada-002<br>
+<em>LLM:</em> GPT-4, GPT-4o<br>
+<em>Vector DB:</em> AI Search, Cosmos DB</div>
+</div>
+</div></div>
+<div class="card">
+<div class="lbl lbl-tech">&#9881; When to Use What</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Scenario</th><th style="background:var(--violet);">Recommended</th></tr>
+<tr><td>Quick prototype</td><td>LangChain + ChromaDB + OpenAI</td></tr>
+<tr><td>Already on GCP</td><td>Vertex AI Search / Agent Builder</td></tr>
+<tr><td>Already on AWS</td><td>Bedrock Knowledge Bases</td></tr>
+<tr><td>Already on Azure</td><td>AI Search + OpenAI On Your Data</td></tr>
+<tr><td>Need full control</td><td>LangChain + Pinecone + any LLM</td></tr>
+<tr><td>Open-source only</td><td>LlamaIndex + Ollama + ChromaDB</td></tr>
+</table></div></div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; DIY vs Managed</div>
+<p><strong>DIY:</strong> Full control, any model, any vector DB. You handle everything.</p>
+<p><strong>Managed:</strong> Upload docs, get endpoint. Less code, less control.</p>
+<p>Start managed, go custom when you need to optimize.</p>
+</div></div>
+</section>
+
+<!-- 9: RAG PROMPT DESIGN -->
+<section class="section" id="s9">
+<div class="sec-head"><div class="sec-num">9</div><h2>RAG Prompt Design &#8212; The Template Pattern</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; System + User Prompt Template</div>
+<p>A RAG prompt has two parts: a <strong>system message</strong> defining the assistant's behavior and a <strong>user message</strong> injecting the retrieved context.</p>
+<div class="prompt-box"><div class="prompt-label better">System Prompt (set once)</div>
+<div class="prompt-text"><span class="hi">You are an assistant whose work is to review 
+the report and provide appropriate answers 
+from the context.</span>
+
+User input will have context beginning with 
+the token: <span class="mn">###Context</span>.
+
+The context contains references to specific 
+portions of a document.
+
+If the answer to the question cannot be derived 
+from the context, <span class="ro">say you don't have enough 
+information.</span></div></div>
+<div class="prompt-box"><div class="prompt-label good">User Prompt Template (per query)</div>
+<div class="prompt-text"><span class="mn">###Context</span>
+Here are documents relevant to the question:
+{retrieved_chunks}
+
+<span class="mn">###Question</span>
+{user_question}</div></div>
+<div class="callout co-violet"><strong>Key design choice:</strong> The system prompt explicitly tells the model NOT to answer if the context doesn't contain the information. This is how RAG eliminates hallucinations &#8212; the model is constrained to the retrieved evidence.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Why ###Context and ###Question Tokens?</div>
+<p>These delimiter tokens (<code>###Context</code>, <code>###Question</code>) act as <strong>clear section markers</strong> that help the LLM distinguish between the retrieved evidence and the actual question.</p>
+<p>Without delimiters, the model might confuse context text with instructions. With them, it knows exactly: "everything between ###Context and ###Question is my evidence; everything after ###Question is what I need to answer."</p>
+<div style="background:#fff;border-radius:var(--r-sm);padding:12px;border:1.5px solid var(--border);margin-top:10px;">
+<div style="font-size:12px;font-weight:700;color:var(--ink3);margin-bottom:6px;">Common delimiter patterns:</div>
+<div class="code" style="font-size:11.5px;margin:0;">###Context ... ###Question    <span class="cm">(case study pattern)</span>
+&lt;context&gt; ... &lt;/context&gt;     <span class="cm">(XML-style)</span>
+--- BEGIN CONTEXT ---          <span class="cm">(separator-style)</span>
+[INST] ... [/INST]             <span class="cm">(Mistral/Llama format)</span></div>
+</div>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Context Window Budget</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<div class="code" style="font-size:12px;"><span class="cm">// Model limit: 32,000 tokens</span>
+<span class="cm">// You must fit EVERYTHING in this budget:</span>
+
+System prompt:      ~200 tokens
+Retrieved chunks:   k &#215; 512 = <span class="hi">~1,536 tokens</span> (k=3)
+User question:      ~50 tokens
+Answer space:       ~500 tokens
+<span class="cm">&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;&#8212;</span>
+Total:              ~2,286 tokens (fits!)
+
+But if k=20:        20 &#215; 512 = <span class="ro">10,240 tokens</span>
+&#8594; Less room for the answer!</div>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Citation Prompting (Production RAG)</p>
+<p style="font-size:13px;color:var(--ink2);">In banking, healthcare, and legal, RAG must cite sources:</p>
+<div class="code" style="font-size:11.5px;"><span class="cm">// Add to system prompt:</span>
+"Always cite the source document and page
+number for each claim in your answer."
+
+<span class="cm">// LLM output:</span>
+"Full-time employees receive 12 sick days
+per year <span class="hi">(HR_Policy.pdf, page 12)</span>."</div>
+<p style="font-size:13px;color:var(--ink3);margin-top:6px;">This is why metadata matters &#8212; the LLM can only cite what the retriever passes along.</p>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 10: PARAMETER TUNING -->
+<section class="section" id="s10">
+<div class="sec-head"><div class="sec-num">10</div><h2>RAG Parameter Tuning</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; The Parameters That Matter Most</div>
+<p>RAG quality depends on tuning both <strong>retrieval</strong> and <strong>generation</strong> parameters:</p>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Parameter</th><th style="background:var(--violet);">Effect</th><th style="background:var(--violet);">Too Low</th><th style="background:var(--violet);">Too High</th></tr>
+<tr><td><strong>k</strong> (retrieval)</td><td>Number of chunks retrieved</td><td>May miss the answer entirely</td><td>Adds noise, dilutes context</td></tr>
+<tr><td><strong>chunk_size</strong></td><td>Tokens per chunk</td><td>Fragmented, missing context</td><td>Too broad, irrelevant text</td></tr>
+<tr><td><strong>chunk_overlap</strong></td><td>Shared tokens between chunks</td><td>May split key sentences</td><td>Redundancy, storage cost</td></tr>
+<tr><td><strong>max_tokens</strong></td><td>Max response length</td><td>Answer gets cut off mid-sentence</td><td>Model may pad with noise</td></tr>
+<tr><td><strong>temperature</strong></td><td>Output randomness</td><td>Rigid, may refuse to elaborate</td><td>May hallucinate despite context</td></tr>
+<tr><td><strong>top_p / top_k</strong></td><td>Token sampling diversity</td><td>Repetitive responses</td><td>Incoherent responses</td></tr>
+</table></div>
+<div class="code"><span class="cm">// Typical RAG parameter settings:</span>
+
+<span class="hi">Retrieval:</span>   k=3, chunk_size=512, chunk_overlap=20
+<span class="hi">Generation:</span> max_tokens=256, temperature=0, top_p=0.95, top_k=50
+
+<span class="cm">// From the case study &#8212; effect of tuning:</span>
+<span class="cm">// Query: "List 3 leadership characteristics"</span>
+
+max_tokens=128 &#8594; <span class="ro">Only 2 characteristics (cut off)</span>
+max_tokens=350 &#8594; <span class="gn">All 3 characteristics returned &#10004;</span></div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Tokenization &#8212; How Chunk Size Is Measured</div>
+<p>Chunk size is measured in <strong>tokens</strong>, not characters. Different tokenizers produce different token counts for the same text.</p>
+<div class="code" style="font-size:11.5px;"><span class="cm">// Same sentence, different tokenizers:</span>
+"The cat sat on the mat"
+
+<span class="hi">cl100k_base</span> (GPT-4/OpenAI): 6 tokens
+<span class="mn">LLaMA tokenizer</span>:             7 tokens
+<span class="kw">Word-level</span>:                   6 tokens
+
+<span class="cm">// The case study uses tiktoken cl100k_base</span>
+from tiktoken import encoding_for_model
+enc = tiktoken.get_encoding("cl100k_base")
+tokens = enc.encode("The cat sat on the mat")
+len(tokens)  <span class="cm"># 6</span></div>
+<p style="margin-top:10px;font-size:14px;">When you set <code>chunk_size=512</code>, the splitter counts <strong>512 tokens in that specific tokenizer</strong>, not 512 characters or 512 words. Always match the tokenizer to your embedding/LLM model.</p>
+</div></div>
+</section>
+
+<!-- 11: OPEN SOURCE STACK -->
+<section class="section" id="s11">
+<div class="sec-head"><div class="sec-num">11</div><h2>Open-Source RAG Stack</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; Running RAG Locally (No API Keys Needed)</div>
+<p>The case study uses a fully open-source stack. No OpenAI API required:</p>
+<div class="code"><span class="cm">// THE CASE STUDY STACK:</span>
+
+<span class="hi">PDF Loader:</span>     PyMuPDFLoader     <span class="cm">(langchain + pymupdf)</span>
+<span class="hi">Chunker:</span>        RecursiveCharacterTextSplitter
+                  .from_tiktoken_encoder(
+                    encoding="cl100k_base",
+                    chunk_size=512,
+                    chunk_overlap=20)
+<span class="hi">Embeddings:</span>     SentenceTransformer("thenlper/gte-large")
+                  <span class="cm">1024 dimensions, runs locally</span>
+<span class="hi">Vector DB:</span>      ChromaDB          <span class="cm">(local, persisted to disk)</span>
+<span class="hi">LLM:</span>            Mistral-7B-Instruct-v0.2 (GGUF)
+                  <span class="cm">via llama-cpp-python</span>
+                  <span class="cm">GPU: n_gpu_layers=38</span>
+                  <span class="cm">CPU: n_cores=-2</span></div>
+<div class="callout co-blue"><strong>GGUF format:</strong> A quantized model format that lets you run 7B-parameter models on a laptop. The Q6_K variant balances quality and speed. Smaller quantizations (Q4) are faster but less accurate.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; PDF Extraction Gotcha</div>
+<h3>Not All Text Extracts Cleanly</h3>
+<p>When a PDF page has <strong>complex layouts</strong> (tables, multi-column text, diagrams with labels), the text extractor may not read content in the correct order.</p>
+<div class="code" style="font-size:11.5px;"><span class="cm">// Page 6 of the Apple HBR report:</span>
+<span class="cm">// Contains shapes, arrows, and text boxes</span>
+
+<span class="ro">Extracted text is NOT sequential &#10060;</span>
+<span class="cm">// Labels from different boxes get mixed together</span>
+
+<span class="cm">// Solutions:</span>
+<span class="gn">1. Use layout-aware extractors (Unstructured.io)</span>
+<span class="gn">2. Use OCR + vision models (GPT-4V on page images)</span>
+<span class="gn">3. Pre-process PDFs to clean up extraction</span></div>
+<p style="margin-top:10px;font-size:14px;">This is a real-world limitation. Always inspect your extracted text before chunking &#8212; garbage in, garbage out.</p>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Quantization &amp; Production Stacks</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">GGUF Quantization Levels</p>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Format</th><th style="background:var(--violet);">Bits</th><th style="background:var(--violet);">Quality</th><th style="background:var(--violet);">7B Model Size</th></tr>
+<tr><td>FP16</td><td>16-bit</td><td>Best</td><td>~14 GB</td></tr>
+<tr><td>Q8_0</td><td>8-bit</td><td>Near perfect</td><td>~7 GB</td></tr>
+<tr><td><strong>Q6_K</strong></td><td>6-bit</td><td>Excellent</td><td><strong>~5.5 GB (case study)</strong></td></tr>
+<tr><td>Q4_K_M</td><td>4-bit</td><td>Good</td><td>~4 GB</td></tr>
+<tr><td>Q2_K</td><td>2-bit</td><td>Poor</td><td>~2.5 GB</td></tr>
+</table></div>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">Production Open-Source Stack (2025&#8211;26)</p>
+<div class="code" style="font-size:12px;"><span class="cm">// Modern production alternative:</span>
+
+<span class="hi">Framework:</span>  LlamaIndex or LangChain
+<span class="hi">Embeddings:</span> BGE-large-en (1024d)
+<span class="hi">Vector DB:</span>  Qdrant or Weaviate
+<span class="hi">LLM:</span>        Llama 3.1 70B or Mistral
+
+<span class="cm">// Why not ChromaDB in production?</span>
+<span class="gn">Good:</span> Easy, local, great for prototyping
+<span class="ro">Weak:</span> Doesn't scale, no distributed mode
+<span class="cm">// Use Qdrant/Pinecone/Weaviate instead</span></div>
+</div></div>
+</div></div>
+
+</section>
+
+<!-- 12: EVALUATION -->
+<section class="section" id="s12">
+<div class="sec-head"><div class="sec-num">12</div><h2>RAG Evaluation &#8212; LLM-as-a-Judge</h2></div>
+<div class="two-col">
+<div class="card">
+<div class="lbl lbl-tech">&#9881; The RAG Triad + LLM-as-a-Judge</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0;">
+<div style="background:var(--blue-pale);border-radius:var(--r-sm);padding:14px;text-align:center;border:1.5px solid #93c5fd;">
+<div style="font-size:1.5rem;margin-bottom:4px;">&#128270;</div>
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--blue);margin-bottom:6px;">Clarity</div>
+<p style="font-size:12.5px;color:var(--ink2);">Is the prompt clear enough for the LLM?</p>
+</div>
+<div style="background:var(--green-pale);border-radius:var(--r-sm);padding:14px;text-align:center;border:1.5px solid #86efac;">
+<div style="font-size:1.5rem;margin-bottom:4px;">&#128588;</div>
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--green);margin-bottom:6px;">Groundedness</div>
+<p style="font-size:12.5px;color:var(--ink2);">Is every claim in the response derived from the context?</p>
+</div>
+<div style="background:var(--violet-pale);border-radius:var(--r-sm);padding:14px;text-align:center;border:1.5px solid #c4b5fd;">
+<div style="font-size:1.5rem;margin-bottom:4px;">&#127919;</div>
+<div style="font-family:'Bitter',serif;font-size:1rem;font-weight:700;color:var(--violet);margin-bottom:6px;">Relevance</div>
+<p style="font-size:12.5px;color:var(--ink2);">Does the response answer what was asked?</p>
+</div>
+</div>
+<p><strong>LLM-as-a-Judge</strong> uses the same LLM to evaluate its own RAG outputs. Give it the question, context, and answer &#8212; ask it to rate on a 1&#8211;5 scale:</p>
+<div class="prompt-box"><div class="prompt-label better">Groundedness Evaluation Prompt</div>
+<div class="prompt-text"><span class="mn">###Question</span>
+{question}
+<span class="mn">###Context</span>
+{retrieved_context}
+<span class="mn">###Answer</span>
+{generated_answer}
+
+<span class="hi">Rate the groundedness of the answer on a 
+scale of 1-5:</span>
+1 = answer is completely fabricated
+5 = every claim is directly from context
+
+Provide your rating and justification.</div></div>
+<div class="callout co-rose"><strong>From the case study:</strong> Query 1 ("Who are the authors?") scored 5/5 on both groundedness and relevance &#8212; a perfect RAG response. Query 3 about innovation examples correctly refused to answer when context didn't contain the information.</div>
+</div>
+<div class="card card-a">
+<div class="lbl lbl-an">&#128161; Evaluation Tools</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Tool</th><th style="background:var(--violet);">Approach</th></tr>
+<tr><td><strong>LLM-as-a-Judge</strong></td><td>Use the same or different LLM to rate outputs (case study approach)</td></tr>
+<tr><td><strong>RAGAS</strong></td><td>Open-source framework: faithfulness, relevance, context precision</td></tr>
+<tr><td><strong>TruLens</strong></td><td>Tracks groundedness, relevance, and answer quality over time</td></tr>
+<tr><td><strong>LangSmith</strong></td><td>LangChain's evaluation + tracing platform</td></tr>
+<tr><td><strong>Human eval</strong></td><td>Manual review &#8212; gold standard but doesn't scale</td></tr>
+</table></div>
+<p style="margin-top:10px;font-size:14px;">The LLM-as-a-judge approach is fast and cheap but has a flaw: the model might be biased toward rating its own outputs favorably. Using a <strong>different, stronger model</strong> as judge (e.g., GPT-4 judging Mistral outputs) is more reliable.</p>
+</div></div>
+
+<div class="two-col" style="margin-top:14px;">
+<div class="card full" style="border-color:#c4b5fd;">
+<div class="lbl lbl-tech">&#128218; Professor Notes &#8212; Evaluate Each Stage Separately</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">RAG Evaluation Pyramid</p>
+<div class="code" style="font-size:12px;"><span class="cm">// Evaluate each layer independently:</span>
+
+<span class="hi">Layer 1: Retrieval</span>
+  Context Precision &#8212; are chunks relevant?
+  Context Recall    &#8212; do chunks contain answer?
+  Recall@K          = relevant_retrieved / relevant_total
+
+<span class="hi">Layer 2: Generation</span>
+  Faithfulness &#8212; answer matches context?
+  Relevance    &#8212; answer matches question?
+
+<span class="cm">// Debug bottom-up. Fix retrieval first.</span></div>
+</div>
+<div>
+<p style="font-size:14px;font-weight:700;color:var(--ink);margin-bottom:6px;">&#9888; Example Failure Analysis</p>
+<div class="code" style="font-size:12px;"><span class="mn">Question:</span> "What is mortgage prepayment penalty?"
+
+<span class="ro">Retrieved chunk:</span> "HELOC rates were adjusted..."
+&#8594; <span class="ro">Retriever failed.</span> Wrong chunk.
+&#8594; Answer is wrong.
+&#8594; <span class="hi">But the LLM is innocent!</span>
+
+<span class="cm">// Fix: better embeddings, adjust chunk size,</span>
+<span class="cm">// add keyword filter, increase k</span></div>
+<div class="callout co-rose" style="margin-top:8px;">In production, 80% of RAG errors are <strong>retrieval errors</strong>, not generation errors. Always debug retrieval first.</div>
+</div></div>
+</div></div>
+
+</section>
+
+
+<!-- 14: ADVANCED RAG -->
+<section class="section" id="s14">
+<div class="sec-head"><div class="sec-num">+</div><h2>Advanced RAG Techniques &#8212; Where the Industry Is Heading</h2></div>
+<div class="two-col"><div class="card full">
+<div class="lbl lbl-tech">&#128640; Beyond Basic RAG</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="background:var(--violet);">Technique</th><th style="background:var(--violet);">What It Does</th><th style="background:var(--violet);">When to Use</th></tr>
+<tr><td><strong>Hybrid Search</strong></td><td>Combine BM25 keyword search with vector semantic search (&#945; &#215; BM25 + (1-&#945;) &#215; Cosine)</td><td>Production systems, domain-specific terms</td></tr>
+<tr><td><strong>Re-ranking</strong></td><td>Cross-encoder model re-scores top-K retrieved chunks for finer relevance</td><td>When initial retrieval has high recall but low precision</td></tr>
+<tr><td><strong>Multi-Query RAG</strong></td><td>LLM generates multiple query variations, retrieves for each, merges results</td><td>Ambiguous or complex questions</td></tr>
+<tr><td><strong>Parent-Child Retrieval</strong></td><td>Retrieve small child chunks for precision, return parent chunk for context</td><td>When small chunks match but lack surrounding context</td></tr>
+<tr><td><strong>Graph RAG</strong></td><td>Build a knowledge graph from documents, traverse relationships during retrieval</td><td>Multi-hop reasoning ("Who reports to the CEO's direct reports?")</td></tr>
+<tr><td><strong>Agentic RAG</strong></td><td>LLM decides when/what to retrieve using ReAct-style reasoning loops</td><td>Complex tasks requiring multiple retrieval steps</td></tr>
+<tr><td><strong>Self-RAG</strong></td><td>Model decides whether to retrieve, then self-evaluates its own response</td><td>Adaptive retrieval &#8212; skip retrieval for simple questions</td></tr>
+<tr><td><strong>Corrective RAG (CRAG)</strong></td><td>If retrieved docs are irrelevant, fall back to web search or other sources</td><td>When your knowledge base may not have the answer</td></tr>
+<tr><td><strong>Knowledge Graph RAG</strong></td><td>Combine structured knowledge graphs with unstructured vector search</td><td>Enterprise data with complex entity relationships</td></tr>
+</table></div>
+<div class="callout co-violet"><strong>The trend:</strong> Basic RAG (retrieve &#8594; generate) is becoming the baseline. Production systems layer these techniques on top. Start simple, add complexity only when evaluation metrics demand it.</div>
+</div></div>
+</section>
+
+<!-- 13: CHEAT SHEET -->
+<section class="section" id="s13">
+<div class="sec-head"><div class="sec-num">&#9733;</div><h2>Cheat Sheet</h2></div>
+<div class="card full">
+<div class="lbl lbl-tech">&#128203; RAG at a Glance</div>
+<div style="overflow-x:auto;">
+<table class="cmp-table">
+<tr><th style="width:20%;background:var(--violet);">Concept</th><th style="width:40%;background:var(--violet);">What It Means</th><th style="width:40%;background:var(--violet);">Key Takeaway</th></tr>
+<tr><td style="font-weight:700;color:var(--violet);">RAG</td><td>Retrieve docs, augment prompt, generate answer</td><td>Open-book exam for LLMs. Fixes hallucinations.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Pipeline</td><td>Chunk &#8594; Embed &#8594; Store &#8594; Retrieve &#8594; Generate</td><td>Two phases: indexing (once) + querying (per question).</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Chunking</td><td>Split docs into 200-500 token pieces with overlap</td><td>Recursive splitting most popular. 10-20% overlap.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Embeddings</td><td>Text &#8594; vectors, similar meanings nearby</td><td>Most critical RAG choice. Bad embeddings = bad everything.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Vector DB</td><td>Specialized DB for nearest-neighbor search</td><td>ChromaDB to prototype. Pinecone/Qdrant for production.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Semantic Search</td><td>Find by meaning, not keywords</td><td>"heart attack" matches "myocardial infarction."</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Faithfulness</td><td>Does answer stick to context?</td><td>Most important RAG metric. Use RAGAS to measure.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">GCP</td><td>Vertex AI Search, Agent Builder</td><td>Upload docs, get RAG endpoint.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">AWS</td><td>Bedrock Knowledge Bases</td><td>S3 integration, multi-model.</td></tr>
+<tr><td style="font-weight:700;color:var(--violet);">Azure</td><td>AI Search + OpenAI On Your Data</td><td>Best GPT-4 integration.</td></tr>
+</table></div></div>
+</section>
+
+</main>
+<footer class="wm-footer">
+<div style="margin-bottom:5px;"><strong>RAG &#8212; Retrieval Augmented Generation &#8212; Teaching Guide</strong></div>
+<div>Created by <strong>MR-SRIKANTH</strong> &middot; srikanth.potukuchi@gmail.com</div>
+<div style="margin-top:5px;font-size:11.5px;color:#374151;">&copy; 2025 All rights reserved.</div>
+</footer>
+<div class="wm-corner">&#10022; MR-SRIKANTH</div>
+<script>
+const obs=new IntersectionObserver(e=>{e.forEach(x=>{if(x.isIntersecting)x.target.classList.add('vis')})},{threshold:.06});
+document.querySelectorAll('.section').forEach(s=>obs.observe(s));
+</script>
+</body>
+</html>
+
+</body></html>
