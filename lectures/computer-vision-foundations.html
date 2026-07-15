@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Computer Vision Foundations — ML Teaching Series</title>
+
+
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Nunito+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+:root{
+  --ink:#1a1a1a;--ink2:#334155;--ink3:#64748b;
+  --blue:#1e40af;--blue-mid:#3b82f6;--blue-pale:#eff6ff;--blue-soft:#dbeafe;
+  --green:#166534;--green-mid:#16a34a;--green-pale:#f0fdf4;--green-soft:#dcfce7;
+  --amber:#92400e;--amber-pale:#fffbeb;
+  --violet:#5b21b6;--violet-pale:#f5f3ff;
+  --rose:#9f1239;--rose-pale:#fff1f2;
+  --teal:#134e4a;--teal-pale:#f0fdfa;
+  --surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;
+  --r:12px;--r-sm:7px
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Nunito Sans',sans-serif;background:#fff;color:var(--ink);
+  font-size:16px;line-height:1.7;overflow-x:hidden
+}
+h1,h2,h3,h4,h5{font-family:'Bitter',serif}
+code,.mono,.num{font-family:'JetBrains Mono',monospace}
+a{color:var(--violet)}
+.wrap{max-width:1100px;margin:0 auto;padding:0 22px}
+
+/* RAG-style hero */
+.hero{
+  background:linear-gradient(135deg,#1a0533 0%,#3b0764 40%,#6d28d9 100%);
+  color:#fff;padding:52px 36px 44px;text-align:center;position:relative;overflow:hidden;
+  border-bottom:none
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 30% 70%,rgba(139,92,246,.25) 0%,transparent 55%),
+    radial-gradient(ellipse at 80% 20%,rgba(59,130,246,.15) 0%,transparent 50%)
+}
+.hero .wrap{position:relative;max-width:820px}
+.hero .kicker{
+  display:inline-block;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);color:#c4b5fd;
+  font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  padding:5px 16px;border-radius:999px;margin-bottom:20px
+}
+.hero h1{
+  font-family:'Bitter',serif;font-size:clamp(2rem,5vw,3.2rem);
+  font-weight:700;line-height:1.12;margin-bottom:14px;color:#fff;max-width:none
+}
+.hero p.lead{font-size:1.05rem;color:#c4b5fd;max-width:640px;margin:0 auto}
+.hero-meta{display:flex;gap:12px;justify-content:center;margin-top:26px;flex-wrap:wrap}
+.hero-meta div{
+  font-size:12px;color:#ddd6fe;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);padding:9px 13px;border-radius:10px
+}
+.hero-meta strong{display:block;color:#fff;font-family:'Bitter',serif;font-size:13px}
+
+/* sticky pill navigation */
+.agenda{
+  background:#fff;border-bottom:1.5px solid var(--border);
+  padding:10px 18px;position:sticky;top:0;z-index:200
+}
+.agenda-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.agenda-item{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  color:var(--ink3);text-decoration:none;padding:5px 12px;border-radius:999px;
+  border:1px solid var(--border);background:#fff;transition:all .18s
+}
+.agenda-item:hover{background:var(--violet);color:#fff;border-color:var(--violet)}
+.agenda-num{
+  width:auto;height:auto;border-radius:0;background:none;color:inherit;
+  font-size:11px;font-family:'JetBrains Mono',monospace
+}
+.agenda-item span.t{font-weight:600;font-size:12px}
+
+/* sections */
+section.topic{
+  max-width:1100px;margin:48px auto;padding:0 22px;border:0;background:#fff;
+  opacity:0;transform:translateY(20px);transition:opacity .5s ease,transform .5s ease
+}
+section.topic.in{opacity:1;transform:none}
+section.topic:nth-of-type(odd){background:#fff}
+.topic-head{
+  margin-bottom:22px;padding-bottom:14px;border-bottom:2px solid var(--border);
+  opacity:1;transform:none;transition:none
+}
+.topic-head.in{opacity:1;transform:none}
+.topic-tag{
+  display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:10px;padding:5px 12px!important;
+  border-radius:999px!important;background:var(--violet-pale)!important;
+  color:var(--violet)!important
+}
+.topic-head h2{
+  font-family:'Bitter',serif;font-size:clamp(1.35rem,3vw,1.75rem);
+  font-weight:700;margin-bottom:6px;color:var(--ink)
+}
+.topic-head .sub{color:var(--ink3);font-size:15px;max-width:780px}
+
+/* two-column technical + analogy */
+.dual{
+  display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;
+  opacity:1;transform:none;transition:none
+}
+.dual.in{opacity:1;transform:none}
+@media(max-width:720px){.dual{grid-template-columns:1fr}}
+.panel{
+  border-radius:var(--r);padding:22px;border:1.5px solid var(--border);background:#fff
+}
+.panel.tech{border-left:1.5px solid var(--border);background:#fff}
+.panel.analogy{background:var(--amber-pale);border-color:#fcd34d}
+.panel h4{
+  font-family:'Nunito Sans',sans-serif;font-size:10.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;color:var(--violet)
+}
+.panel.analogy h4{color:var(--amber)}
+.panel p{font-size:15px;color:var(--ink2);margin-bottom:8px}
+.panel p:last-child{margin-bottom:0}
+.panel ul{padding-left:20px;margin:8px 0;color:var(--ink2)}
+.panel li{margin-bottom:6px}
+.analogy-badge{
+  display:inline-block;background:transparent;color:var(--amber);padding:0;
+  border-radius:0;margin-bottom:8px;font-size:10.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;font-family:'Nunito Sans',sans-serif
+}
+
+/* worked examples */
+.worked{
+  border-radius:var(--r);overflow:hidden;border:1.5px solid var(--border);
+  margin-top:18px;opacity:1;transform:none;transition:none;background:#fff
+}
+.worked.in{opacity:1;transform:none}
+.worked-head{
+  background:var(--ink);color:#fff;padding:12px 16px;
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap
+}
+.worked-body{
+  background:var(--ink);color:#e2e8f0;padding:18px;
+  font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75
+}
+.worked-body .step{margin-bottom:18px}
+.worked-body .step:last-child{margin-bottom:0}
+.worked-body .label{
+  color:#a78bfa;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px
+}
+.worked-body .formula{font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75}
+.worked-body .result{color:#86efac;font-weight:700}
+.note{border-radius:var(--r-sm);padding:12px 16px;font-size:13px;margin:10px 0}
+.matrix-caption{font-size:11.5px;color:#94a3b8;margin-top:6px;font-family:'JetBrains Mono',monospace}
+
+/* tables */
+table.matrix{border-collapse:collapse;margin:12px 0;max-width:100%}
+table.matrix td{
+  border:1px solid #334155;padding:8px 10px;text-align:center;
+  font-family:'JetBrains Mono',monospace;font-size:12px;color:#e2e8f0
+}
+table.matrix td.hl{background:#312e81;color:#fff;font-weight:700}
+table.matrix.light td{border-color:var(--border);color:var(--ink);background:#fff}
+table.matrix.light td.hl{background:var(--violet-pale);color:var(--violet)}
+table.cmp{
+  width:100%;border-collapse:collapse;font-size:14px;margin:10px 0
+}
+table.cmp th{
+  background:var(--ink);color:#fff;padding:9px 12px;text-align:left;
+  font-weight:600;font-size:12px
+}
+table.cmp td{
+  padding:9px 12px;border-bottom:1px solid var(--border);
+  color:var(--ink2);vertical-align:top
+}
+table.cmp tr:nth-child(even) td{background:var(--surface2)}
+.kernel-row{display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start;margin-top:10px}
+.kernel-block h5{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink3);margin-bottom:6px}
+
+/* cards and pipelines */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:20px}
+.usecase{
+  border:1.5px solid var(--border);border-radius:var(--r);padding:20px;background:#fff;
+  opacity:1;transform:none;transition:all .18s
+}
+.usecase:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(15,23,42,.06)}
+.usecase .icon{font-size:24px;margin-bottom:8px}
+.usecase h4{font-size:1rem;margin-bottom:6px}
+.usecase p{font-size:14px;color:var(--ink2)}
+.pipeline{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:18px}
+.pipe-step{
+  flex:1;min-width:130px;text-align:center;padding:14px 10px;
+  border:1.5px solid #c4b5fd;border-radius:var(--r-sm);
+  background:var(--violet-pale);font-size:13px;font-weight:600;color:var(--ink2)
+}
+.pipe-arrow{color:var(--violet);font-weight:700}
+@media(max-width:760px){.pipe-arrow{display:none}.pipeline{flex-direction:column}.pipe-step{width:100%}}
+
+.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.pill{font-family:'JetBrains Mono',monospace;font-size:11px;padding:5px 10px;border-radius:999px;background:var(--violet-pale);color:var(--violet);font-weight:600}
+
+/* quiz */
+.quiz{
+  border:1.5px solid var(--border);border-radius:var(--r);padding:22px;margin-top:16px;background:#fff
+}
+.quiz .q{font-weight:700;margin-bottom:12px;font-size:15px}
+.quiz .opts{display:grid;gap:9px}
+.quiz .opt{
+  border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 13px;
+  font-size:14px;cursor:pointer;background:var(--surface2);transition:.15s
+}
+.quiz .opt:hover{border-color:var(--violet);background:var(--violet-pale)}
+.quiz .opt.correct{background:var(--green-pale);border-color:#86efac}
+.quiz .explain{margin-top:10px;font-size:13.5px;color:var(--ink3);display:none}
+.quiz .explain.show{display:block}
+
+/* headings inside sections */
+section.topic h3{
+  font-family:'Bitter',serif;font-size:1.15rem!important;
+  margin-top:34px!important;margin-bottom:14px!important;color:var(--ink)
+}
+
+/* watermark/footer */
+.watermark-layer{display:none}
+footer{
+  background:var(--ink);color:#64748b;text-align:center;padding:26px;
+  font-size:13px;border-top:3px solid var(--violet);font-family:sans-serif;margin-top:50px
+}
+footer p{margin:0 0 4px}
+footer .signature{color:#e2e8f0;font-weight:700}
+body::after{
+  content:'✦ MR-SRIKANTH';position:fixed;bottom:16px;right:16px;
+  background:rgba(13,17,23,.85);color:#c4b5fd;font-size:11px;font-weight:700;
+  letter-spacing:.06em;padding:7px 14px;border-radius:999px;
+  border:1px solid rgba(196,181,253,.25);backdrop-filter:blur(6px);
+  z-index:9999;pointer-events:none;font-family:sans-serif
+}
+::selection{background:var(--violet-pale);color:var(--violet)}
+@media print{.agenda{display:none}body::after{display:none}}
+</style></head>
+<body>
+<div class="watermark-layer" id="wmLayer"></div>
+<header class="hero">
+<div class="wrap">
+<span class="kicker">ML Teaching Series</span>
+<h1>Computer Vision Foundations</h1>
+<p class="lead">Teach machines to see: pixels, color spaces, feature extraction, convolution, and edge detection with worked numerical examples.</p>
+<div class="hero-meta">
+<div><strong>5 Modules</strong>Vision · Pixels · Features · Convolution · ANN Experiments</div>
+<div><strong>Prerequisite</strong>Basic Python, arrays/matrices</div>
+<div><strong>Format</strong>Concept + worked numeric example each module</div>
+</div>
+</div>
+</header>
+<nav class="agenda">
+<div class="wrap">
+<div class="agenda-grid">
+<a class="agenda-item" href="#m1"><span class="agenda-num">1</span><span class="t">What Is Computer Vision?</span></a>
+<a class="agenda-item" href="#m2"><span class="agenda-num">2</span><span class="t">Pixels, Color &amp; Image Arrays</span></a>
+<a class="agenda-item" href="#m3"><span class="agenda-num">3</span><span class="t">Feature Extraction: HOG, SIFT, Convolution</span></a>
+<a class="agenda-item" href="#m4"><span class="agenda-num">4</span><span class="t">The Convolution Operation &amp; Edge Detection</span></a>
+<a class="agenda-item" href="#m5"><span class="agenda-num">5</span><span class="t">ANN Image Experiments &amp; Model Comparison</span></a>
+</div>
+</div>
+</nav>
+<!-- ============ MODULE 1 ============ -->
+<section class="topic" id="m1">
+<div class="wrap">
+<div class="topic-head">
+<span class="topic-tag">Module 1 · Introduction</span>
+<h2>What Is Computer Vision?</h2>
+<p class="sub">Teaching a machine to "see" is really teaching it to turn pixels into decisions — the same way your eyes turn light into "duck it, that's a ball."</p>
+</div>
+<div class="dual">
+<div class="panel tech">
+<h4>Technical Definition</h4>
+<p><strong>Computer Vision</strong> is the branch of AI that lets machines derive meaningful information from digital images, video, and other visual input — and then act on that information.</p>
+<p>The typical pipeline looks like this:</p>
+<div class="pipeline">
+<div class="pipe-step">📷 Image Acquisition</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">🔍 Screening / Preprocessing</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">🧮 Feature / Pattern Analysis</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">🏷️ Inference / Action</div>
+</div>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🔦 Analogy</span>
+<p>Think of walking into a dark room and feeling for a light switch. You don't consciously reason "this is a rectangular plastic protrusion at hand height" — your brain does that instantly and jumps straight to "flip it."</p>
+<p>A CV model does the same, except its "feeling around" is entirely numerical: every image is just a giant spreadsheet of numbers, and the model learns which patterns of numbers correspond to "switch," "cat," or "stop sign."</p>
+</div>
+</div>
+<h3 style="margin-top:52px; font-size:22px;">Where This Shows Up in the Real World</h3>
+<div class="card-grid">
+<div class="usecase"><div class="icon">🚗</div><h4>Autonomous Vehicles</h4><p>Lane detection, obstacle avoidance, and route navigation, all computed from camera + sensor feeds many times per second.</p></div>
+<div class="usecase"><div class="icon">🛒</div><h4>Retail</h4><p>Cashier-less checkout, shelf/inventory monitoring, and footfall heatmaps — Amazon Go being the best-known example.</p></div>
+<div class="usecase"><div class="icon">🏦</div><h4>Banking &amp; Insurance</h4><p>Document OCR, ID authentication, fraud flags, and drone-based damage assessment for claims.</p></div>
+<div class="usecase"><div class="icon">🩺</div><h4>Healthcare</h4><p>Reading X-rays, CT and MRI scans to flag tumors or lung conditions — often matching specialist-level accuracy.</p></div>
+<div class="usecase"><div class="icon">📱</div><h4>Smartphone Apps</h4><p>QR scanning, Instagram/Snapchat filters, face unlock, and text-from-photo tools like Google Lens.</p></div>
+<div class="usecase"><div class="icon">🥽</div><h4>AR / VR</h4><p>Tracking where your headset is in a room and estimating depth, so virtual objects sit convincingly in real space.</p></div>
+</div>
+</div>
+</section>
+<!-- ============ MODULE 2 ============ -->
+<section class="topic" id="m2">
+<div class="wrap">
+<div class="topic-head">
+<span class="topic-tag">Module 2 · Representation</span>
+<h2>Pixels, Color Spaces &amp; Image Arrays</h2>
+<p class="sub">Before a model can find a cat in a photo, it needs the photo in a form math can touch — a grid of numbers.</p>
+</div>
+<div class="dual">
+<div class="panel tech">
+<h4>The Pixel</h4>
+<p>An image is a grid of tiny colored squares called <strong>pixels</strong>. Each pixel carries an <strong>intensity value from 0–255</strong> per color channel it has.</p>
+<p>Three things fully describe an image:</p>
+<ul>
+<li><strong>Size</strong> — height × width, in pixels</li>
+<li><strong>Color space</strong> — Grayscale, RGB, HSV, etc.</li>
+<li><strong>Channels</strong> — how many numbers each pixel needs (1 for grayscale, 3 for RGB)</li>
+</ul>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧱 Analogy</span>
+<p>Picture a Minecraft build viewed from far away — thousands of single-color blocks that only look like a coherent picture once you back away. Each block is a pixel; its "block type" is its intensity value.</p>
+<p>Grayscale blocks only come in shades of gray (one dial: how bright). RGB blocks come from mixing three paint tubes — red, green, blue — so each block needs three dials instead of one.</p>
+</div>
+</div>
+<h3 style="margin-top:52px; font-size:22px;">The RGB Color Scheme</h3>
+<div class="dual">
+<div class="panel tech">
+<p>Every RGB pixel is a triplet <code>[R, G, B]</code>, each ranging 0–255. <code>0</code> means "none of that color," <code>255</code> means "full intensity."</p>
+<table class="cmp">
+<tr><th>Color</th><th>R</th><th>G</th><th>B</th></tr>
+<tr><td>Pure Red</td><td>255</td><td>0</td><td>0</td></tr>
+<tr><td>Pure Green</td><td>0</td><td>255</td><td>0</td></tr>
+<tr><td>Pure Blue</td><td>0</td><td>0</td><td>255</td></tr>
+<tr><td>Yellow</td><td>255</td><td>255</td><td>0</td></tr>
+<tr><td>White</td><td>255</td><td>255</td><td>255</td></tr>
+<tr><td>Black</td><td>0</td><td>0</td><td>0</td></tr>
+</table>
+<p style="margin-top:14px;"><strong>Grayscale is the special case</strong> where R = G = B, so it collapses to one number instead of three.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🎨 Analogy</span>
+<p>It's exactly like a stage lighting rig with three spotlights — one red, one green, one blue — all aimed at the same spot. Turn all three to full brightness and the spot looks white. Turn all three off and it's pitch black. Grayscale is what happens when someone swaps all three bulbs for the same shade of white and just dims them together.</p>
+</div>
+</div>
+<div class="worked in">
+<div class="worked-head"><span>Worked Example: RGB → Grayscale Conversion</span><span>3×3 patch</span></div>
+<div class="worked-body">
+<div class="step">
+<div class="label">Step 1 — a 3×3 RGB patch (each cell is [R, G, B])</div>
+<table class="matrix">
+<tr><td>[210,40,40]</td><td>[210,40,40]</td><td>[40,180,60]</td></tr>
+<tr><td>[210,40,40]</td><td>[60,60,220]</td><td>[40,180,60]</td></tr>
+<tr><td>[60,60,220]</td><td>[60,60,220]</td><td>[40,180,60]</td></tr>
+</table>
+</div>
+<div class="step">
+<div class="label">Step 2 — apply the simple average formula</div>
+<div class="formula">Grayscale = (R + G + B) / 3</div>
+</div>
+<div class="step">
+<div class="label">Step 3 — resulting single-channel grid</div>
+<table class="matrix">
+<tr><td class="hl">97</td><td class="hl">97</td><td class="hl">93</td></tr>
+<tr><td class="hl">97</td><td class="hl">113</td><td class="hl">93</td></tr>
+<tr><td class="hl">113</td><td class="hl">113</td><td class="hl">93</td></tr>
+</table>
+<div class="matrix-caption">e.g. (210+40+40)/3 = 96.6 → 97. Three channels collapsed into one.</div>
+</div>
+<div class="note" style="background:#12331f; border-left-color:#3fb864; color:#bdf2cf;">
+          A more perceptually accurate version weights green heavier, since the human eye is more sensitive to it:
+          <span class="formula">Grayscale = 0.299·R + 0.587·G + 0.114·B</span>
+</div>
+</div>
+</div>
+<h3 style="margin-top:52px; font-size:22px;">Images as Arrays — 2D, 3D, 4D</h3>
+<div class="dual">
+<div class="panel tech">
+<ul>
+<li><strong>Single grayscale image</strong> → 2D array, shape <code>(height, width)</code></li>
+<li><strong>Batch of grayscale images</strong> → 3D array, shape <code>(samples, height, width)</code></li>
+<li><strong>Single RGB image</strong> → 3D array, shape <code>(height, width, 3)</code></li>
+<li><strong>Batch of RGB images</strong> → 4D array, shape <code>(samples, height, width, 3)</code></li>
+</ul>
+<p>This is exactly the tensor shape you'll feed into a neural network later in the course.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">📚 Analogy</span>
+<p>A grayscale image is a single sheet of graph paper with a number in every box. An RGB image is three transparent sheets — red, green, blue — stacked on a lightbox, each with its own numbers. A whole dataset is just a filing cabinet of these stacks, one drawer per photo.</p>
+</div>
+</div>
+<div class="dual" style="margin-top:26px;">
+<div class="panel tech">
+<h4>Pixel Normalization</h4>
+<p>Raw pixel values (0–255) are rescaled to <strong>[0, 1]</strong> before feeding a neural network, since small, consistent input ranges make gradient-based training faster and more stable.</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">normalized_pixel = raw_pixel × (1/255)<br/>e.g. 178 × 0.0039 ≈ <span class="result">0.698</span></div>
+</div>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">📏 Analogy</span>
+<p>It's like converting every measurement in a recipe to "fraction of a cup" instead of a mix of grams, tablespoons, and pinches. Same information, but now every ingredient speaks the same scale — easier for the (neural) chef to follow consistently.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ============ MODULE 3 ============ -->
+<section class="topic" id="m3">
+<div class="wrap">
+<div class="topic-head">
+<span class="topic-tag">Module 3 · Feature Extraction</span>
+<h2>Feature Extraction: HOG, SIFT &amp; the Rise of Convolution</h2>
+<p class="sub">A raw pixel grid is mostly noise for a task like "is there a face here?" Feature extraction strips it down to what actually matters.</p>
+</div>
+<div class="dual">
+<div class="panel tech">
+<h4>What Counts as a "Feature"</h4>
+<p>A feature is any piece of information extractable from an image — shape, edges, texture, color distribution — that helps a downstream task like classification or detection.</p>
+<p>Not every task needs every feature. You can often recognize an object from its <strong>edges alone</strong>, even with color and background stripped away.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🕵️ Analogy</span>
+<p>Think of a police sketch artist. They don't need a full-color photograph to produce a recognizable likeness — a black-and-white outline capturing jawline, eyes, and hairline is often enough for someone to say "that's him." Feature extraction is the CV equivalent of that sketch: keep the outline, drop the noise.</p>
+</div>
+</div>
+<h3 style="margin-top:52px; font-size:22px;">Two Classic Hand-Crafted Techniques</h3>
+<table class="cmp">
+<tr><th>HOG (Histogram of Oriented Gradients)</th><th>SIFT (Scale-Invariant Feature Transform)</th></tr>
+<tr>
+<td>Focuses on the <strong>structure and shape</strong> of an object by measuring gradient direction and magnitude in local regions.</td>
+<td>Converts image content into local <strong>keypoint</strong> coordinates that stay stable under rotation, scaling, or lighting changes.</td>
+</tr>
+<tr>
+<td>Good at capturing silhouettes — historically strong for pedestrian detection.</td>
+<td>Good at matching the same object across two different photos of it (different angle, size, lighting).</td>
+</tr>
+</table>
+<p style="margin-top:16px; color:var(--sub); font-size:15px;"><strong>Shared weakness:</strong> both are computationally expensive, mathematically intricate to hand-tune, and don't generalize cleanly across wildly different image types — exactly the gap convolution was built to close.</p>
+<div class="dual" style="margin-top:36px;">
+<div class="panel tech">
+<h4>Why Convolution Took Over</h4>
+<ul>
+<li>It's <strong>trainable</strong> — instead of hand-designing what pattern to look for, the model learns the best filter values from data.</li>
+<li>It scales from <strong>low-level features</strong> (edges, corners) to <strong>high-level features</strong> (eyes, wheels, faces) simply by stacking layers.</li>
+<li>2012's AlexNet — a CNN built on convolution — beat the runner-up in the ImageNet competition by a double-digit margin, pulling the whole field's attention toward learned filters over hand-crafted ones like HOG and SIFT.</li>
+</ul>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧑‍🍳</span>
+<p>HOG and SIFT are like a chef who follows one fixed recipe no matter what's in the fridge. Convolution — especially inside a CNN — is a chef who tastes the dish as they go and adjusts the recipe itself, layer after layer, until it matches what the diners actually want.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- ============ MODULE 4 ============ -->
+<section class="topic" id="m4">
+<div class="wrap">
+<div class="topic-head">
+<span class="topic-tag">Module 4 · Convolution &amp; Edges</span>
+<h2>The Convolution Operation &amp; Edge Detection</h2>
+<p class="sub">Convolution is the single operation that lets a small matrix of numbers "scan" an image and light up wherever a pattern it's tuned for appears.</p>
+</div>
+<div class="dual">
+<div class="panel tech">
+<h4>What an Edge Actually Is</h4>
+<p>Mathematically, an <strong>edge</strong> is a region where pixel intensity changes sharply between neighboring pixels — a steep gradient, not a gradual fade.</p>
+<p>Convolution finds these gradients using a small grid of numbers called a <strong>kernel</strong> (or <strong>filter</strong>): slide it across the image, multiply overlapping values, sum them, and write the sum into an output grid called the <strong>feature map</strong>.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🔦 Analogy</span>
+<p>Imagine dragging a small stencil over a textured wall in the dark, feeling for a specific bump pattern with your fingertips. Wherever the wall's texture matches your stencil's shape, you feel a strong "click." A convolution kernel is that stencil — it lights up numerically wherever the image matches its pattern.</p>
+</div>
+</div>
+<div class="worked in">
+<div class="worked-head"><span>Worked Example: Sliding a 3×3 Vertical-Edge Kernel</span><span>5×5 input → 3×3 output</span></div>
+<div class="worked-body">
+<div class="step">
+<div class="label">Step 1 — a 5×5 grayscale input (left half dark, right half bright)</div>
+<table class="matrix">
+<tr><td>20</td><td>20</td><td>20</td><td>200</td><td>200</td></tr>
+<tr><td>20</td><td>20</td><td>20</td><td>200</td><td>200</td></tr>
+<tr><td>20</td><td>20</td><td>20</td><td>200</td><td>200</td></tr>
+<tr><td>20</td><td>20</td><td>20</td><td>200</td><td>200</td></tr>
+<tr><td>20</td><td>20</td><td>20</td><td>200</td><td>200</td></tr>
+</table>
+<div class="matrix-caption">There's a true vertical edge running down the middle column.</div>
+</div>
+<div class="step">
+<div class="label">Step 2 — the kernel: a 3×3 vertical edge detector</div>
+<table class="matrix">
+<tr><td>-1</td><td>0</td><td>1</td></tr>
+<tr><td>-1</td><td>0</td><td>1</td></tr>
+<tr><td>-1</td><td>0</td><td>1</td></tr>
+</table>
+</div>
+<div class="step">
+<div class="label">Step 3 — place the kernel over the top-left 3×3 region and multiply + sum</div>
+<div class="formula">
+            (20×-1)+(20×0)+(20×1) +<br/>
+            (20×-1)+(20×0)+(20×1) +<br/>
+            (20×-1)+(20×0)+(20×1) = <span class="result">0</span>
+</div>
+<div class="matrix-caption">Flat region, no edge → output is 0.</div>
+</div>
+<div class="step">
+<div class="label">Step 4 — slide the kernel one column right, over the actual edge</div>
+<div class="formula">
+            (20×-1)+(20×0)+(200×1) +<br/>
+            (20×-1)+(20×0)+(200×1) +<br/>
+            (20×-1)+(20×0)+(200×1) = <span class="result">540</span>
+</div>
+<div class="matrix-caption">A big positive spike — the kernel "felt" the edge.</div>
+</div>
+<div class="step">
+<div class="label">Step 5 — the completed 3×3 output feature map</div>
+<table class="matrix">
+<tr><td class="hl">0</td><td class="hl">540</td><td class="hl">0</td></tr>
+<tr><td class="hl">0</td><td class="hl">540</td><td class="hl">0</td></tr>
+<tr><td class="hl">0</td><td class="hl">540</td><td class="hl">0</td></tr>
+</table>
+<div class="formula" style="margin-top:10px;">Output size = (n − f + 1) × (n − f + 1) = (5 − 3 + 1) = <span class="result">3×3</span></div>
+</div>
+</div>
+</div>
+<h3 style="margin-top:52px; font-size:22px;">Three Classic Edge-Detection Kernels</h3>
+<div class="dual">
+<div class="panel tech">
+<p>All three follow the same design rule: values on either side of center have <strong>opposite signs</strong>, so flat regions cancel to ~0 and gradients produce large magnitudes.</p>
+<div class="kernel-row">
+<div class="kernel-block">
+<h5>Prewitt (vertical)</h5>
+<table class="matrix light"><tr><td>-1</td><td>0</td><td>1</td></tr><tr><td>-1</td><td>0</td><td>1</td></tr><tr><td>-1</td><td>0</td><td>1</td></tr></table>
+</div>
+<div class="kernel-block">
+<h5>Sobel (vertical)</h5>
+<table class="matrix light"><tr><td>-1</td><td>0</td><td>1</td></tr><tr><td>-2</td><td>0</td><td>2</td></tr><tr><td>-1</td><td>0</td><td>1</td></tr></table>
+</div>
+<div class="kernel-block">
+<h5>Laplacian</h5>
+<table class="matrix light"><tr><td>0</td><td>1</td><td>0</td></tr><tr><td>1</td><td>-4</td><td>1</td></tr><tr><td>0</td><td>1</td><td>0</td></tr></table>
+</div>
+</div>
+<ul style="margin-top:20px;">
+<li><strong>Prewitt</strong> — the simplest gradient kernel; needs a separate horizontal version too.</li>
+<li><strong>Sobel</strong> — Prewitt's center row/column weighted ±2 instead of ±1, giving stronger, cleaner edge response.</li>
+<li><strong>Laplacian</strong> — a second-order kernel that catches edges in <em>every</em> direction with a single pass, but is noise-sensitive, so images are usually smoothed first.</li>
+</ul>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🥁</span>
+<p>Prewitt is tapping a table lightly to feel for a seam. Sobel is tapping harder in the middle of the same motion — same idea, stronger signal. Laplacian is more like shaking the whole table at once: it reacts to a seam in any direction, but it also reacts to every little wobble (noise), which is why you steady the table first (blur) before using it.</p>
+</div>
+</div>
+<div class="dual" style="margin-top:36px;">
+<div class="panel tech">
+<h4>Convolution on Color (RGB) Images</h4>
+<p>An RGB image is a 3-channel stack, so the kernel must match: a <code>3×3×3</code> filter for a 3-channel image. All 27 kernel numbers multiply against their 27 corresponding pixel values, and every product gets summed into <strong>one</strong> output number.</p>
+<p>Using <strong>multiple filters</strong> at once (say, one for vertical edges, one for horizontal) produces a stack of feature maps — one per filter — which is exactly the "depth" dimension you'll see in CNN layers.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🎛️</span>
+<p>Running several filters over the same image is like having several sound engineers each isolate a different instrument from the same recording — one pulls out the bassline, another the vocals, another the drums. Each engineer (filter) hears the same input but reports back a different, specialized track (feature map).</p>
+</div>
+</div>
+<div class="dual" style="margin-top:36px;">
+<div class="panel tech">
+<h4>From Hand-Crafted Filters to CNNs</h4>
+<p>Prewitt, Sobel, and Laplacian are all <strong>fixed, hand-designed</strong> kernels — someone chose those exact numbers. A <strong>Convolutional Neural Network</strong> keeps the sliding-and-summing mechanics identical, but treats the kernel's numbers as <strong>learnable weights</strong>, discovered automatically through forward propagation and backpropagation.</p>
+<p>You still choose the kernel <em>size</em> (e.g. 3×3) as a hyperparameter — but the model decides what pattern that kernel should hunt for.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🎯</span>
+<p>It's the difference between handing someone a pre-cut stencil and handing them a blank stencil plus thousands of practice walls, letting them sand it into whatever shape turns out to be most useful. The CNN sands its own stencils.</p>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============ MODULE 5 ============ -->
+<section class="topic" id="m5">
+<div class="wrap">
+<div class="topic-head">
+<span class="topic-tag">Module 5 · ANN Experiments</span>
+<h2>Building Four ANN Models and Comparing Their Performance</h2>
+<p class="sub">We will train the same fully connected neural-network architecture on four different image representations, then compare the results to see which representation helps the ANN classify images most effectively.</p>
+</div>
+
+<div class="dual">
+<div class="panel tech">
+<h4>The Four Models</h4>
+<p>We are not building four unrelated networks. We are running a controlled experiment: the ANN structure stays broadly similar, while the image input changes.</p>
+<table class="cmp">
+<tr><th>Model</th><th>Input representation</th><th>What we are testing</th></tr>
+<tr><td><strong>Model 1</strong></td><td>Original RGB images</td><td>Whether full color information gives the ANN the strongest signal.</td></tr>
+<tr><td><strong>Model 2</strong></td><td>Grayscale images</td><td>Whether removing color simplifies the problem without losing important structure.</td></tr>
+<tr><td><strong>Model 3</strong></td><td>Gaussian-blurred images</td><td>Whether reducing noise and fine detail improves generalization.</td></tr>
+<tr><td><strong>Model 4</strong></td><td>Laplacian-filtered images</td><td>Whether emphasizing edges and boundaries helps the ANN focus on shape.</td></tr>
+</table>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧪 Experiment Analogy</span>
+<p>Imagine asking four students to identify the same object, but giving each one a different version of the picture: the original color photo, a black-and-white copy, a softened photo, and an edge sketch.</p>
+<p>The students are similar, but the evidence they receive is different. Their scores reveal which visual representation makes the task easiest.</p>
+</div>
+</div>
+
+<div class="pipeline">
+<div class="pipe-step">RGB ANN</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">Grayscale ANN</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">Gaussian-Blur ANN</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">Laplacian ANN</div>
+<div class="pipe-arrow">→</div>
+<div class="pipe-step">Compare Accuracy, Loss &amp; Generalization</div>
+</div>
+
+<h3>Student Question: Can an Image Have Four Color Channels?</h3>
+<div class="dual">
+<div class="panel tech">
+<h4>RGB Versus RGBA</h4>
+<p>Yes, an image can contain four channels, but the fourth channel is usually <strong>not another visible color</strong>.</p>
+<p>The common four-channel format is <strong>RGBA</strong>:</p>
+<table class="cmp">
+<tr><th>Channel</th><th>Meaning</th></tr>
+<tr><td>R</td><td>Red intensity</td></tr>
+<tr><td>G</td><td>Green intensity</td></tr>
+<tr><td>B</td><td>Blue intensity</td></tr>
+<tr><td>A</td><td>Alpha, which stores transparency or opacity</td></tr>
+</table>
+<p>An RGBA pixel such as <code>[255, 0, 0, 255]</code> represents fully opaque red. A value such as <code>[255, 0, 0, 100]</code> is still red, but it is partially transparent.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🪟 Transparency Analogy</span>
+<p>RGB describes the paint color. Alpha describes how much of the background can be seen through that paint.</p>
+<p>A high alpha value behaves like solid paint. A low alpha value behaves more like tinted glass.</p>
+</div>
+</div>
+
+<div class="dual" style="margin-top:22px;">
+<div class="panel tech">
+<h4>Do Neural Networks Use the Alpha Channel?</h4>
+<p>Most standard computer-vision datasets use either one grayscale channel or three RGB channels. When an image includes alpha, the transparency channel is often removed before training:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">image = image[:, :, :3]</div>
+</div>
+<p style="margin-top:12px;">This keeps only the red, green, and blue channels. The alpha channel should be retained only when transparency itself carries useful information for the prediction task.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧳 Useful Baggage</span>
+<p>A neural network can carry a fourth channel, but there is no reason to pack it unless it helps with the journey.</p>
+<p>If every image is fully opaque, alpha is just an extra suitcase filled with air.</p>
+</div>
+</div>
+
+<div class="dual" style="margin-top:22px;">
+<div class="panel tech">
+<h4>Can Images Have More Than Four Channels?</h4>
+<p>Yes. A channel is simply another matrix of measurements aligned with the same image.</p>
+<table class="cmp">
+<tr><th>Image type</th><th>Typical channel count</th></tr>
+<tr><td>Grayscale</td><td>1</td></tr>
+<tr><td>RGB</td><td>3</td></tr>
+<tr><td>RGBA</td><td>4</td></tr>
+<tr><td>Satellite imagery</td><td>Many spectral bands</td></tr>
+<tr><td>Hyperspectral imagery</td><td>Dozens or hundreds</td></tr>
+</table>
+<p>Satellite channels may include near-infrared or thermal measurements. These are not visible colors, but they provide useful information about vegetation, water, heat, and materials.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🔭 Extra Lenses</span>
+<p>Each channel is another lens observing the same scene. RGB uses three human-visible lenses. Satellite systems may add lenses that detect heat or infrared light that human eyes cannot see.</p>
+</div>
+</div>
+
+<div class="note" style="background:var(--blue-pale); border-left:4px solid var(--blue-mid); color:var(--ink2); margin-top:22px;">
+<strong>Classroom answer:</strong> “Yes, we can use four channels. The fourth channel is usually alpha, which represents transparency, not a fourth color. Neural networks can also use many more channels when each channel contains a useful measurement.”
+</div>
+
+
+
+<h3>Model 1: ANN with RGB Images</h3>
+<div class="dual">
+<div class="panel tech">
+<h4>Step 1 — Read the Dataset Shape</h4>
+<p><code>num_classes = labels['Label'].nunique()</code> counts the number of unique target categories. If the dataset contains cats, dogs, and horses, then <code>num_classes = 3</code>.</p>
+<p><code>image_size = x_train_rgb[0].size</code> calculates the total number of values in one RGB image. For a <code>32 × 32 × 3</code> image, this is:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">32 × 32 × 3 = <span class="result">3072 input values</span></div>
+</div>
+<p style="margin-top:12px;"><code>shape = x_train_rgb.shape[1:]</code> removes the batch dimension and stores only the shape of one image, such as <code>(32, 32, 3)</code>.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">📦 Shape Analogy</span>
+<p>A dataset tensor is a warehouse full of image boxes. The first number tells us how many boxes there are. The remaining numbers describe the dimensions of one box.</p>
+<p>So <code>(5000, 32, 32, 3)</code> means 5,000 images, each with height 32, width 32, and three color channels.</p>
+</div>
+</div>
+
+<div class="worked in">
+<div class="worked-head"><span>RGB ANN Architecture</span><span>Image → Flatten → Dense Layers → Class Probabilities</span></div>
+<div class="worked-body">
+<div class="step">
+<div class="label">Input</div>
+<div class="formula">Input(shape=(height, width, 3))</div>
+<div class="matrix-caption">The model receives one RGB image at a time.</div>
+</div>
+<div class="step">
+<div class="label">Flatten</div>
+<div class="formula">Flatten() : 32 × 32 × 3 → <span class="result">3072</span></div>
+<div class="matrix-caption">The 3D image becomes one long vector. No learning happens in this layer.</div>
+</div>
+<div class="step">
+<div class="label">Hidden Layers</div>
+<div class="formula">3072 → 256 → 128 → 64 → 32</div>
+<div class="matrix-caption">Each Dense layer learns combinations of pixel values useful for classification.</div>
+</div>
+<div class="step">
+<div class="label">Output Layer</div>
+<div class="formula">Dense(num_classes, activation='softmax')</div>
+<div class="matrix-caption">Softmax converts the final scores into class probabilities that sum to 1.</div>
+</div>
+</div>
+</div>
+
+<h3>What Each Layer Does</h3>
+<div class="dual">
+<div class="panel tech">
+<h4>Sequential and Input</h4>
+<p><code>model_1 = Sequential()</code> creates a model where layers are arranged one after another.</p>
+<p><code>Input(shape=(shape[0], shape[1], shape[2]))</code> tells Keras the height, width, and number of channels expected for one image.</p>
+
+<h4 style="margin-top:20px;">Flatten</h4>
+<p><code>Flatten()</code> converts the image tensor into a vector. For example:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">(32, 32, 3) → <span class="result">(3072,)</span></div>
+</div>
+<p style="margin-top:12px;">This allows the image to enter Dense layers, but it also removes the explicit spatial arrangement of neighboring pixels.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧵 Flatten Analogy</span>
+<p>Flattening is like taking a tiled picture off the wall, numbering every tile, and arranging all tiles in one long line.</p>
+<p>The colors are still present, but the model no longer has a built-in notion that tile 41 was directly beside tile 42. That is one reason CNNs usually handle images better than ordinary ANNs.</p>
+</div>
+</div>
+
+<div class="dual" style="margin-top:20px;">
+<div class="panel tech">
+<h4>Dense Layers and ReLU</h4>
+<p>The hidden layers contain <code>256</code>, <code>128</code>, <code>64</code>, and <code>32</code> neurons. Each neuron computes a weighted combination:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">z = W·x + b<br/>ReLU(z) = max(0, z)</div>
+</div>
+<p style="margin-top:12px;"><code>ReLU</code> keeps positive values and turns negative values into zero, allowing the network to learn nonlinear patterns.</p>
+<p><code>he_uniform</code> initializes the weights in a range designed to work well with ReLU activations and helps keep training stable.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧠 Feature Funnel</span>
+<p>The network starts with thousands of raw pixel values and passes them through a narrowing funnel.</p>
+<p>Early neurons react to broad combinations of color and intensity. Later neurons retain only the combinations most useful for deciding the class.</p>
+</div>
+</div>
+
+<div class="dual" style="margin-top:20px;">
+<div class="panel tech">
+<h4>Softmax Output</h4>
+<p>The final layer has one neuron per class:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">Dense(num_classes, activation='softmax')</div>
+</div>
+<p style="margin-top:12px;">For three classes, the output might be <code>[0.02, 0.95, 0.03]</code>. The model predicts the second class because it has the highest probability.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🗳️ Probability Vote</span>
+<p>Softmax turns the network's final scores into a probability ballot. Every class receives a share, and all shares add up to 100%.</p>
+</div>
+</div>
+
+<h3>Reading <code>model.summary()</code></h3>
+<div class="dual">
+<div class="panel tech">
+<h4>What the Summary Shows</h4>
+<p><code>model_1.summary()</code> prints a compact blueprint of the network. For every layer, it reports:</p>
+<ul>
+<li><strong>Layer name and type</strong> — for example, <code>flatten</code> or <code>dense_1</code>.</li>
+<li><strong>Output shape</strong> — the shape of the data after it passes through that layer.</li>
+<li><strong>Param #</strong> — the number of trainable weights and biases in that layer.</li>
+</ul>
+<p>The word <code>None</code> in an output shape represents the <strong>batch size</strong>. It is left unspecified so the model can process different batch sizes.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🏗️ Blueprint Analogy</span>
+<p>A model summary is the building plan for the neural network. Each row tells us the size of one floor, how many rooms it contains, and how many adjustable parts are installed there.</p>
+<p><code>None</code> means the building can admit different-sized groups of visitors without redesigning the structure.</p>
+</div>
+</div>
+
+<div class="worked in">
+<div class="worked-head"><span>Worked Example: Understanding the Output Shapes and Parameters</span><span>49152 → 256 → 128 → 64 → 32 → 10</span></div>
+<div class="worked-body">
+<div class="step">
+<div class="label">Flatten layer</div>
+<div class="formula">Output shape: (None, 49152)<br/>Parameters: <span class="result">0</span></div>
+<div class="matrix-caption">Flatten only reshapes the image into a vector. It does not contain weights or biases.</div>
+</div>
+
+<div class="step">
+<div class="label">Dense layer with 256 neurons</div>
+<div class="formula">
+Weights = 49152 × 256 = 12,582,912<br/>
+Biases = 256<br/>
+Total = 12,582,912 + 256 = <span class="result">12,583,168</span>
+</div>
+</div>
+
+<div class="step">
+<div class="label">Dense layer with 128 neurons</div>
+<div class="formula">
+Weights = 256 × 128 = 32,768<br/>
+Biases = 128<br/>
+Total = 32,768 + 128 = <span class="result">32,896</span>
+</div>
+</div>
+
+<div class="step">
+<div class="label">Dense layer with 64 neurons</div>
+<div class="formula">
+Weights = 128 × 64 = 8,192<br/>
+Biases = 64<br/>
+Total = 8,192 + 64 = <span class="result">8,256</span>
+</div>
+</div>
+
+<div class="step">
+<div class="label">Dense layer with 32 neurons</div>
+<div class="formula">
+Weights = 64 × 32 = 2,048<br/>
+Biases = 32<br/>
+Total = 2,048 + 32 = <span class="result">2,080</span>
+</div>
+</div>
+
+<div class="step">
+<div class="label">Output layer with 10 neurons</div>
+<div class="formula">
+Weights = 32 × 10 = 320<br/>
+Biases = 10<br/>
+Total = 320 + 10 = <span class="result">330</span>
+</div>
+<div class="matrix-caption">Ten output neurons mean the classification problem has ten classes.</div>
+</div>
+
+<div class="step">
+<div class="label">Total parameter count</div>
+<div class="formula">
+12,583,168 + 32,896 + 8,256 + 2,080 + 330<br/>
+= <span class="result">12,626,730 trainable parameters</span>
+</div>
+</div>
+</div>
+</div>
+
+<h3>The Dense-Layer Parameter Formula</h3>
+<div class="dual">
+<div class="panel tech">
+<h4>General Formula</h4>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">Parameters = (input units × output units) + output units</div>
+</div>
+<p style="margin-top:12px;">The first term counts all connections between the previous layer and the current layer. The second term counts one bias value for every neuron in the current layer.</p>
+<p>Every neuron receives one weight from every input, plus its own bias.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">☎️ Connection Analogy</span>
+<p>Imagine every neuron in one layer has a direct phone line to every neuron in the next layer. Each phone line is a weight.</p>
+<p>Each receiving neuron also has one private adjustment dial, its bias. Count all phone lines, then add one dial per receiving neuron.</p>
+</div>
+</div>
+
+<table class="cmp" style="margin-top:22px;">
+<tr><th>Layer</th><th>Output shape</th><th>Calculation</th><th>Parameters</th></tr>
+<tr><td>Flatten</td><td><code>(None, 49152)</code></td><td>Reshape only</td><td>0</td></tr>
+<tr><td>Dense 256</td><td><code>(None, 256)</code></td><td><code>49152×256 + 256</code></td><td>12,583,168</td></tr>
+<tr><td>Dense 128</td><td><code>(None, 128)</code></td><td><code>256×128 + 128</code></td><td>32,896</td></tr>
+<tr><td>Dense 64</td><td><code>(None, 64)</code></td><td><code>128×64 + 64</code></td><td>8,256</td></tr>
+<tr><td>Dense 32</td><td><code>(None, 32)</code></td><td><code>64×32 + 32</code></td><td>2,080</td></tr>
+<tr><td>Dense 10</td><td><code>(None, 10)</code></td><td><code>32×10 + 10</code></td><td>330</td></tr>
+</table>
+
+<div class="dual" style="margin-top:24px;">
+<div class="panel tech">
+<h4>Trainable and Non-Trainable Parameters</h4>
+<p><strong>Trainable parameters: 12,626,730</strong> means all weights and biases will be updated by backpropagation.</p>
+<p><strong>Non-trainable parameters: 0</strong> means no layer has frozen weights or fixed statistics.</p>
+<p>The reported size of approximately <strong>48.17 MB</strong> comes from storing the parameters as 32-bit floating-point numbers:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">12,626,730 × 4 bytes ≈ <span class="result">48.17 MiB</span></div>
+</div>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🎛️ Adjustable Knobs</span>
+<p>Trainable parameters are the model's adjustable knobs. During learning, backpropagation turns these knobs to reduce prediction error.</p>
+<p>More knobs can make the model more expressive, but they also increase memory use, training time, and the risk of overfitting.</p>
+</div>
+</div>
+
+<div class="note" style="background:var(--rose-pale); border-left:4px solid var(--rose); color:var(--ink2); margin-top:22px;">
+<strong>Important observation:</strong> almost all parameters are in the first Dense layer because flattening creates 49,152 inputs. That first connection alone contributes more than 12.5 million parameters. This parameter explosion is one major reason CNNs are usually preferred for images: convolution uses small shared filters instead of connecting every pixel to every neuron.
+</div>
+
+
+
+<h3>Compiling the Model</h3>
+<div class="dual">
+<div class="panel tech">
+<h4>Adam Optimizer</h4>
+<p><code>adam = optimizers.Adam()</code> creates the optimization algorithm that updates the network's weights during training.</p>
+<p>Adam adjusts the step size for different parameters and usually performs well as a strong default optimizer.</p>
+
+<h4 style="margin-top:20px;">Categorical Cross-Entropy</h4>
+<p><code>categorical_crossentropy</code> measures how far the predicted probability distribution is from the correct one-hot encoded label.</p>
+<p>For example, if the correct class is Dog:</p>
+<div class="worked-body" style="background:#0f1420; border-radius:10px; margin-top:10px;">
+<div class="formula">True label: [0, 1, 0]<br/>Prediction: [0.20, 0.70, 0.10]</div>
+</div>
+<p style="margin-top:12px;"><code>metrics=['accuracy']</code> asks Keras to report the percentage of correctly classified images.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🧭 Training Analogy</span>
+<p>The loss function tells the model how wrong it was. Adam decides how the model should adjust its weights. Accuracy keeps the scoreboard.</p>
+<p>Loss is the compass, Adam is the steering system, and accuracy is the dashboard gauge.</p>
+</div>
+</div>
+
+<h3>Why Compare Four Image Representations?</h3>
+<div class="dual">
+<div class="panel tech">
+<p>The comparison helps answer four practical questions:</p>
+<ul>
+<li>Does color provide useful predictive information?</li>
+<li>Can grayscale reduce complexity while preserving performance?</li>
+<li>Does Gaussian blur suppress distracting noise?</li>
+<li>Do Laplacian edges expose object shape more clearly?</li>
+</ul>
+<p>We should compare more than training accuracy. The final decision should consider validation accuracy, test accuracy, loss curves, overfitting, and stability across epochs.</p>
+</div>
+<div class="panel analogy">
+<span class="analogy-badge">🏁 Final Selection</span>
+<p>The best model is not automatically the one that memorizes the training set most aggressively.</p>
+<p>It is the one that performs well on unseen images without its training curve turning into a victory parade while the validation curve quietly falls into a ditch.</p>
+</div>
+</div>
+
+<table class="cmp" style="margin-top:22px;">
+<tr><th>Metric</th><th>What it tells us</th></tr>
+<tr><td>Training accuracy</td><td>How well the model fits images it has already seen.</td></tr>
+<tr><td>Validation accuracy</td><td>How well it generalizes during model development.</td></tr>
+<tr><td>Test accuracy</td><td>Final performance on untouched data.</td></tr>
+<tr><td>Training vs validation gap</td><td>A large gap may indicate overfitting.</td></tr>
+<tr><td>Validation loss</td><td>Whether probability estimates are improving or becoming overconfident.</td></tr>
+<tr><td>Training time and model size</td><td>Whether the accuracy improvement is worth the extra computational cost.</td></tr>
+</table>
+</div>
+</section>
+
+<!-- ============ RECAP ============ -->
+<section class="topic" style="background:#fff;">
+<div class="wrap">
+<div class="topic-head">
+<span class="topic-tag">Quick Self-Check</span>
+<h2>Recap Before You Teach</h2>
+<p class="sub">Three quick checks to confirm the core ideas landed. Click an option to reveal the explanation.</p>
+</div>
+<div class="quiz" id="q1">
+<div class="q">1. Why does convolution generally outperform HOG and SIFT for feature extraction?</div>
+<div class="opts">
+<div class="opt" data-explain="HOG and SIFT are hand-designed once and don't adapt to new data.">It runs faster on any hardware</div>
+<div class="opt correct" data-explain="Correct — convolution filters are learned from data rather than hand-engineered, letting them adapt low-level and high-level features to the exact task.">Its filter values are learned from data instead of hand-engineered</div>
+<div class="opt" data-explain="Convolution works on grayscale and color images alike.">It only works on grayscale images</div>
+</div>
+<div class="explain" id="ex-q1"></div>
+</div>
+<div class="quiz" id="q2" style="margin-top:20px;">
+<div class="q">2. For a 6×6 input convolved with a 3×3 kernel (stride 1, no padding), what's the output size?</div>
+<div class="opts">
+<div class="opt" data-explain="That would be the size with padding added — no padding is used here.">6×6</div>
+<div class="opt correct" data-explain="Correct — output size = (n − f + 1) = (6 − 3 + 1) = 4, so the feature map is 4×4.">4×4</div>
+<div class="opt" data-explain="That's too small — check the formula (n − f + 1).">3×3</div>
+</div>
+<div class="explain" id="ex-q2"></div>
+</div>
+<div class="quiz" id="q3" style="margin-top:20px;">
+<div class="q">3. Why does the Laplacian filter need only one kernel while Prewitt and Sobel need two?</div>
+<div class="opts">
+<div class="opt" data-explain="It's actually more compute per pass, not less — the tradeoff is direction coverage, not speed.">It's computationally cheaper</div>
+<div class="opt correct" data-explain="Correct — as a second-order derivative filter, it responds to intensity changes in every direction at once, so it doesn't need separate horizontal and vertical passes.">It's a second-order filter that reacts to gradients in every direction at once</div>
+<div class="opt" data-explain="Laplacian is actually more noise-sensitive, which is why images are pre-smoothed.">It ignores noise automatically</div>
+</div>
+<div class="explain" id="ex-q3"></div>
+</div>
+</div>
+</section>
+<footer>
+<div class="wrap">
+<p>Lecture 9 — Computer Vision Foundations · Data Science &amp; ML Curriculum</p>
+<div class="signature">MR-SRIKANTH</div>
+</div>
+</footer>
+<script>
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('in');
+    }
+  });
+}, { threshold: .06 });
+
+document.querySelectorAll('section.topic').forEach(section => obs.observe(section));
+
+document.querySelectorAll('.quiz').forEach(quiz => {
+  const explainBox = quiz.querySelector('.explain');
+  quiz.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      quiz.querySelectorAll('.opt').forEach(o => o.style.opacity = '0.55');
+      opt.style.opacity = '1';
+      explainBox.textContent = opt.dataset.explain;
+      explainBox.classList.add('show');
+    });
+  });
+});
+</script>
+</body>
+</html>

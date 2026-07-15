@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="description" content="A visual teaching case study showing how CanadianBankNews moved expensive AI work out of the user request path and used caching, Cloud CDN, Cloud Run, Next.js, scheduled jobs, and Vertex AI to deliver fast production pages."/>
+<title>How AI Websites Stay Fast on Google Cloud — Production Case Study</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;700&family=Nunito+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root{
+  --ink:#172033; --ink2:#334155; --ink3:#64748b;
+  --blue:#1e40af; --blue-mid:#3b82f6; --blue-pale:#eff6ff; --blue-soft:#dbeafe;
+  --green:#166534; --green-mid:#16a34a; --green-pale:#f0fdf4; --green-soft:#dcfce7;
+  --amber:#92400e; --amber-mid:#d97706; --amber-pale:#fffbeb; --amber-soft:#fef3c7;
+  --violet:#5b21b6; --violet-mid:#7c3aed; --violet-pale:#f5f3ff; --violet-soft:#ede9fe;
+  --rose:#9f1239; --rose-pale:#fff1f2;
+  --teal:#115e59; --teal-pale:#f0fdfa;
+  --surface:#fff; --surface2:#f8fafc; --border:#e2e8f0;
+  --r:14px; --r-sm:8px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Nunito Sans',sans-serif;background:#fff;color:var(--ink);
+  font-size:16px;line-height:1.72;overflow-x:hidden
+}
+h1,h2,h3,h4,h5{font-family:'Bitter',serif}
+code,.mono,.num{font-family:'JetBrains Mono',monospace}
+a{color:var(--violet);text-underline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+
+/* Hero */
+.hero{
+  background:linear-gradient(135deg,#071b35 0%,#0f3a5f 45%,#155e75 100%);
+  color:#fff;padding:58px 36px 48px;text-align:center;position:relative;overflow:hidden
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse at 20% 80%,rgba(59,130,246,.25),transparent 52%),
+    radial-gradient(ellipse at 80% 20%,rgba(45,212,191,.18),transparent 48%);
+}
+.hero .wrap{position:relative;max-width:900px}
+.hero .kicker{
+  display:inline-block;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.22);color:#bae6fd;
+  font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;
+  padding:6px 16px;border-radius:999px;margin-bottom:20px
+}
+.hero h1{
+  font-size:clamp(2rem,5vw,3.25rem);line-height:1.13;color:#fff;margin-bottom:15px
+}
+.hero .lead{font-size:1.08rem;color:#dbeafe;max-width:760px;margin:0 auto}
+.hero-meta{display:flex;gap:12px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.hero-meta div{
+  font-size:12px;color:#dbeafe;background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.16);padding:10px 14px;border-radius:10px
+}
+.hero-meta strong{display:block;color:#fff;font-size:13px;font-family:'Bitter',serif}
+
+/* Sticky agenda */
+.agenda{
+  background:#fff;border-bottom:1.5px solid var(--border);
+  padding:10px 18px;position:sticky;top:0;z-index:200
+}
+.agenda-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.agenda-item{
+  display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;
+  color:var(--ink3);text-decoration:none;padding:5px 12px;border-radius:999px;
+  border:1px solid var(--border);background:#fff;transition:.18s
+}
+.agenda-item:hover{background:var(--teal);color:#fff;border-color:var(--teal)}
+.agenda-num{font-family:'JetBrains Mono',monospace;font-size:10px}
+
+/* Sections */
+section.topic{
+  max-width:1120px;margin:52px auto;padding:0 22px;
+  opacity:0;transform:translateY(20px);transition:opacity .55s ease,transform .55s ease
+}
+section.topic.in{opacity:1;transform:none}
+.topic-head{margin-bottom:24px;padding-bottom:15px;border-bottom:2px solid var(--border)}
+.topic-tag{
+  display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:10px;padding:5px 12px;border-radius:999px;
+  background:var(--teal-pale);color:var(--teal)
+}
+.topic-head h2{font-size:clamp(1.45rem,3vw,1.9rem);margin-bottom:6px}
+.topic-head .sub{color:var(--ink3);font-size:15px;max-width:850px}
+section.topic h3{font-size:1.18rem;margin:34px 0 14px;color:var(--ink)}
+
+/* Panels */
+.dual{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
+@media(max-width:760px){.dual{grid-template-columns:1fr}}
+.panel{
+  border-radius:var(--r);padding:22px;border:1.5px solid var(--border);background:#fff
+}
+.panel.tech{border-top:4px solid var(--blue-mid)}
+.panel.analogy{background:var(--amber-pale);border-color:#fcd34d;border-top:4px solid var(--amber-mid)}
+.panel.insight{background:var(--violet-pale);border-color:#c4b5fd;border-top:4px solid var(--violet-mid)}
+.panel h4,.eyebrow{
+  font-family:'Nunito Sans',sans-serif;font-size:10.5px;font-weight:800;
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:10px;color:var(--blue)
+}
+.panel.analogy h4{color:var(--amber)}
+.panel.insight h4{color:var(--violet)}
+.panel p{font-size:15px;color:var(--ink2);margin-bottom:9px}
+.panel p:last-child{margin-bottom:0}
+.panel ul{padding-left:20px;color:var(--ink2)}
+.panel li{margin:6px 0}
+
+/* Architecture and flow diagrams */
+.diagram{
+  background:#0f172a;color:#e2e8f0;border-radius:var(--r);
+  padding:24px;margin:18px 0;border:1px solid #1e293b;overflow:auto
+}
+.diagram-title{
+  color:#94a3b8;font:600 11px 'JetBrains Mono',monospace;
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:15px
+}
+.flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+.node{
+  flex:1;min-width:125px;padding:14px 12px;border-radius:9px;text-align:center;
+  background:#172554;border:1px solid #3b82f6;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;min-height:64px
+}
+.node.green{background:#052e16;border-color:#22c55e}
+.node.amber{background:#451a03;border-color:#f59e0b}
+.node.violet{background:#2e1065;border-color:#8b5cf6}
+.node.gray{background:#1e293b;border-color:#475569}
+.arrow{
+  color:#67e8f9;font-weight:900;font-size:22px;display:flex;align-items:center
+}
+@media(max-width:760px){
+  .flow{flex-direction:column}
+  .node{width:100%}
+  .arrow{transform:rotate(90deg);justify-content:center;height:20px}
+}
+.split-flow{display:grid;grid-template-columns:1fr 70px 1fr;gap:12px;align-items:center}
+@media(max-width:760px){.split-flow{grid-template-columns:1fr}.split-arrow{transform:rotate(90deg)}}
+.side{
+  border:1px solid #334155;border-radius:12px;padding:18px;background:#111827
+}
+.side h4{font-family:'Bitter',serif;font-size:1rem;color:#fff;margin-bottom:10px}
+.side.bad{border-color:#fb7185}.side.good{border-color:#4ade80}
+.stack{display:grid;gap:8px}
+.stack-step{
+  padding:10px 12px;border-radius:7px;border:1px solid #334155;
+  background:#1e293b;font-size:12.5px;text-align:center
+}
+.stack-step.hot{border-color:#fb7185;background:#4c0519}
+.stack-step.fast{border-color:#4ade80;background:#052e16}
+.split-arrow{text-align:center;font-size:30px;color:#67e8f9}
+
+/* Timeline */
+.timeline{
+  display:grid;grid-template-columns:150px 1fr 75px;gap:10px;align-items:center;margin:9px 0
+}
+.timeline .label{font-size:13px;font-weight:700;color:#cbd5e1}
+.bar-track{height:24px;border-radius:999px;background:#1e293b;overflow:hidden}
+.bar{height:100%;border-radius:999px;background:linear-gradient(90deg,#38bdf8,#8b5cf6)}
+.bar.cached{background:linear-gradient(90deg,#34d399,#22c55e)}
+.timeline .time{text-align:right;font:600 12px 'JetBrains Mono',monospace;color:#fff}
+@media(max-width:600px){.timeline{grid-template-columns:1fr}.timeline .time{text-align:left}}
+
+/* Cards */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:15px;margin-top:18px}
+.card{
+  border:1.5px solid var(--border);border-radius:var(--r);padding:19px;background:#fff;
+  transition:.18s
+}
+.card:hover{transform:translateY(-2px);box-shadow:0 9px 24px rgba(15,23,42,.07)}
+.card .icon{font-size:25px;margin-bottom:7px}
+.card h4{font-size:1rem;margin-bottom:6px}
+.card p{font-size:14px;color:var(--ink2)}
+.badge{
+  display:inline-block;font:700 10.5px 'JetBrains Mono',monospace;
+  padding:4px 9px;border-radius:999px;margin-top:9px
+}
+.badge.cache{background:var(--green-soft);color:var(--green)}
+.badge.no{background:var(--rose-pale);color:var(--rose)}
+
+/* Decision table */
+table.cmp{width:100%;border-collapse:collapse;font-size:14px;margin:12px 0}
+table.cmp th{background:var(--ink);color:#fff;padding:10px 12px;text-align:left}
+table.cmp td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--ink2)}
+table.cmp tr:nth-child(even) td{background:var(--surface2)}
+
+/* Metric cards */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px;margin-top:18px}
+.metric{
+  border:1.5px solid #bae6fd;background:var(--blue-pale);border-radius:var(--r);padding:20px
+}
+.metric .value{font:700 1.7rem 'JetBrains Mono',monospace;color:var(--blue)}
+.metric .name{font-weight:800;margin-top:2px}
+.metric .note{font-size:13px;color:var(--ink3);margin-top:5px}
+
+/* Callouts and code */
+.callout{
+  margin:18px 0;border-radius:var(--r-sm);padding:15px 17px;font-size:14px;
+  border-left:5px solid var(--violet-mid);background:var(--violet-pale);color:var(--ink2)
+}
+.callout.warn{border-left-color:var(--amber-mid);background:var(--amber-pale)}
+.callout.good{border-left-color:var(--green-mid);background:var(--green-pale)}
+.question{
+  font-family:'Bitter',serif;font-size:1.18rem;text-align:center;
+  background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);
+  padding:22px;margin:18px 0
+}
+code.inline{background:#eef2ff;color:#4338ca;padding:2px 6px;border-radius:5px;font-size:.88em}
+
+/* Progressive reveal buttons */
+.reveal{
+  border:1.5px solid var(--border);border-radius:var(--r);padding:20px;margin-top:17px;background:#fff
+}
+.reveal button{
+  border:0;background:var(--teal);color:#fff;font-weight:800;padding:9px 15px;
+  border-radius:8px;cursor:pointer;font-family:'Nunito Sans',sans-serif
+}
+.reveal-content{display:none;margin-top:14px;color:var(--ink2)}
+.reveal.open .reveal-content{display:block}
+
+/* Quiz */
+.quiz{border:1.5px solid var(--border);border-radius:var(--r);padding:22px;margin-top:16px;background:#fff}
+.quiz .q{font-weight:800;margin-bottom:12px}
+.quiz .opts{display:grid;gap:9px}
+.quiz .opt{
+  border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 13px;
+  font-size:14px;cursor:pointer;background:var(--surface2);transition:.15s
+}
+.quiz .opt:hover{border-color:var(--teal);background:var(--teal-pale)}
+.quiz .explain{display:none;margin-top:11px;font-size:13.5px;color:var(--ink3)}
+.quiz .explain.show{display:block}
+
+/* Footer */
+footer{
+  background:var(--ink);color:#94a3b8;text-align:center;padding:28px;
+  font-size:13px;border-top:3px solid var(--teal);margin-top:55px
+}
+footer .signature{color:#e2e8f0;font-weight:800}
+body::after{
+  content:'✦ MR-SRIKANTH';position:fixed;bottom:16px;right:16px;
+  background:rgba(15,23,42,.88);color:#bae6fd;font-size:11px;font-weight:800;
+  letter-spacing:.06em;padding:7px 14px;border-radius:999px;
+  border:1px solid rgba(186,230,253,.28);backdrop-filter:blur(6px);
+  z-index:9999;pointer-events:none
+}
+::selection{background:var(--teal-pale);color:var(--teal)}
+@media print{.agenda,body::after,.reveal button{display:none}section.topic{opacity:1;transform:none}.reveal-content{display:block}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="kicker">Applied AI Engineering · Production Case Study</span>
+    <h1>How AI Websites Stay Fast on Google Cloud</h1>
+    <p class="lead">A visual walkthrough of how CanadianBankNews moved AI, external data fetching, and repeated computation away from the user's critical request path.</p>
+    <div class="hero-meta">
+      <div><strong>9 Modules</strong>Latency · Caching · CDN · ISR · APIs · Monitoring</div>
+      <div><strong>Real System</strong>Next.js · Cloud Run · Vertex AI · Cloud CDN</div>
+      <div><strong>Learning Goal</strong>Understand how a model becomes part of a production website</div>
+    </div>
+  </div>
+</header>
+
+<nav class="agenda">
+  <div class="wrap">
+    <div class="agenda-grid">
+      <a class="agenda-item" href="#m1"><span class="agenda-num">01</span> The Click</a>
+      <a class="agenda-item" href="#m2"><span class="agenda-num">02</span> Critical Path</a>
+      <a class="agenda-item" href="#m3"><span class="agenda-num">03</span> Precompute</a>
+      <a class="agenda-item" href="#m4"><span class="agenda-num">04</span> Safe Caching</a>
+      <a class="agenda-item" href="#m5"><span class="agenda-num">05</span> CDN</a>
+      <a class="agenda-item" href="#m6"><span class="agenda-num">06</span> Rendering</a>
+      <a class="agenda-item" href="#m7"><span class="agenda-num">07</span> APIs & DB</a>
+      <a class="agenda-item" href="#m8"><span class="agenda-num">08</span> Results</a>
+      <a class="agenda-item" href="#m9"><span class="agenda-num">09</span> Architecture</a>
+    </div>
+  </div>
+</nav>
+
+<section class="topic" id="m1">
+  <div class="topic-head">
+    <span class="topic-tag">Module 1 · From Click to Answer</span>
+    <h2>What Happens When You Open an AI Website?</h2>
+    <p class="sub">The browser shows one page. The production system may coordinate a CDN, application server, database, deterministic rules, cached data, and an AI model.</p>
+  </div>
+
+  <div class="question">A user sees a click. The server sees an orchestra.</div>
+
+  <div class="diagram">
+    <div class="diagram-title">A simplified live request</div>
+    <div class="flow">
+      <div class="node">🧑 User Browser</div><div class="arrow">→</div>
+      <div class="node violet">🌐 Cloud CDN</div><div class="arrow">→</div>
+      <div class="node">☁️ Cloud Run</div><div class="arrow">→</div>
+      <div class="node amber">🧠 Rules / AI</div><div class="arrow">→</div>
+      <div class="node green">📄 Response</div>
+    </div>
+  </div>
+
+  <div class="dual">
+    <div class="panel tech">
+      <h4>Technical View</h4>
+      <p>The AI model is not “inside the webpage.” The browser sends an HTTPS request. A backend service validates it, gathers context, applies business logic, may call a model, and returns HTML or JSON.</p>
+      <p>In CanadianBankNews, Next.js runs on Cloud Run while Vertex AI handles selected AI tasks. Cached public content may be served before Cloud Run is needed at all.</p>
+    </div>
+    <div class="panel analogy">
+      <h4>🎭 Stage Analogy</h4>
+      <p>The user sees the actor deliver one line. Behind the curtain are lighting, sound, stage management, costume, and timing.</p>
+      <p>The AI model is an important performer, but it is not the entire theatre.</p>
+    </div>
+  </div>
+
+  <div class="callout good"><strong>Teaching idea:</strong> deployment is not finished when a model endpoint responds. Production begins when the endpoint is connected safely to users, data, business rules, caching, observability, and rollback.</div>
+</section>
+
+<section class="topic" id="m2">
+  <div class="topic-head">
+    <span class="topic-tag">Module 2 · The Original Bottleneck</span>
+    <h2>The User Became Part of the Backend Pipeline</h2>
+    <p class="sub">Early versions did too much after the visitor arrived. Every extra dependency stretched the path between click and content.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">The costly version</div>
+    <div class="flow">
+      <div class="node">Open Page</div><div class="arrow">→</div>
+      <div class="node amber">Fetch News</div><div class="arrow">→</div>
+      <div class="node amber">Load Rates</div><div class="arrow">→</div>
+      <div class="node violet">Call AI</div><div class="arrow">→</div>
+      <div class="node gray">Render</div><div class="arrow">→</div>
+      <div class="node green">Return</div>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Why sequential work compounds</div>
+    <div class="timeline"><div class="label">External news</div><div class="bar-track"><div class="bar" style="width:72%"></div></div><div class="time">wait</div></div>
+    <div class="timeline"><div class="label">AI summary</div><div class="bar-track"><div class="bar" style="width:92%"></div></div><div class="time">wait</div></div>
+    <div class="timeline"><div class="label">Database / APIs</div><div class="bar-track"><div class="bar" style="width:55%"></div></div><div class="time">wait</div></div>
+    <div class="timeline"><div class="label">Page rendering</div><div class="bar-track"><div class="bar" style="width:35%"></div></div><div class="time">wait</div></div>
+  </div>
+
+  <div class="dual">
+    <div class="panel tech">
+      <h4>Latency Is Additive</h4>
+      <p>If tasks run sequentially, the user experiences roughly the sum of their delays. One slow external source can hold the entire response hostage.</p>
+      <p>A prototype can tolerate this. A production site with mobile users, crawlers, and repeat visitors cannot.</p>
+    </div>
+    <div class="panel insight">
+      <h4>Engineering Insight</h4>
+      <p>The first performance question is not “Which server is faster?”</p>
+      <p>It is: <strong>Which work should not happen during this request at all?</strong></p>
+    </div>
+  </div>
+</section>
+
+<section class="topic" id="m3">
+  <div class="topic-head">
+    <span class="topic-tag">Module 3 · The Highest-Leverage Change</span>
+    <h2>Move Expensive AI Work Out of the Request Path</h2>
+    <p class="sub">AI summaries and slow-changing rate snapshots can be prepared before a visitor asks for them.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">Before vs after</div>
+    <div class="split-flow">
+      <div class="side bad">
+        <h4>❌ Before: Cook While the User Waits</h4>
+        <div class="stack">
+          <div class="stack-step hot">User opens homepage</div>
+          <div class="stack-step hot">Fetch external content</div>
+          <div class="stack-step hot">Call Vertex AI</div>
+          <div class="stack-step hot">Build summary</div>
+          <div class="stack-step hot">Render and return</div>
+        </div>
+      </div>
+      <div class="split-arrow">→</div>
+      <div class="side good">
+        <h4>✅ After: Prepare Ahead</h4>
+        <div class="stack">
+          <div class="stack-step fast">Scheduled job runs</div>
+          <div class="stack-step fast">Fetch news and rates</div>
+          <div class="stack-step fast">Generate summaries</div>
+          <div class="stack-step fast">Store results</div>
+          <div class="stack-step fast">User reads cached result</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dual">
+    <div class="panel tech">
+      <h4>Technical Pattern</h4>
+      <p>This is <strong>precomputation</strong>. A scheduled process performs expensive or slow work outside the live request. The website then reads the prepared result.</p>
+      <p>The pattern is especially useful when content changes every few hours or once per day, rather than every second.</p>
+    </div>
+    <div class="panel analogy">
+      <h4>🍲 Restaurant Analogy</h4>
+      <p>A restaurant does not grow vegetables after you order soup. It prepares stock before opening, then completes the final steps when the order arrives.</p>
+      <p>Scheduled AI work is the digital kitchen prep.</p>
+    </div>
+  </div>
+
+  <div class="callout"><strong>Key principle:</strong> AI should be in the critical path only when the response truly requires fresh, user-specific generation.</div>
+</section>
+
+<section class="topic" id="m4">
+  <div class="topic-head">
+    <span class="topic-tag">Module 4 · Cache Without Leaking Data</span>
+    <h2>Public Pages and Private Responses Need Different Rules</h2>
+    <p class="sub">Caching is powerful because it avoids repeated work. It is also dangerous when applied to personalized or authenticated data.</p>
+  </div>
+
+  <div class="card-grid">
+    <div class="card"><div class="icon">🏠</div><h4>Homepage</h4><p>Same public content for many visitors.</p><span class="badge cache">CACHE</span></div>
+    <div class="card"><div class="icon">🏦</div><h4>Bank Guides</h4><p>Editorial pages that change infrequently.</p><span class="badge cache">CACHE</span></div>
+    <div class="card"><div class="icon">📰</div><h4>Article Pages</h4><p>Public content, suitable for edge delivery.</p><span class="badge cache">CACHE</span></div>
+    <div class="card"><div class="icon">🔐</div><h4>Saved Scenarios</h4><p>Specific to the signed-in user.</p><span class="badge no">NO-STORE</span></div>
+    <div class="card"><div class="icon">🛠️</div><h4>Admin Routes</h4><p>Private controls and operational data.</p><span class="badge no">NO-STORE</span></div>
+    <div class="card"><div class="icon">👤</div><h4>Personalized API</h4><p>Depends on identity or request parameters.</p><span class="badge no">NO-STORE</span></div>
+  </div>
+
+  <h3>The decision rule</h3>
+  <table class="cmp">
+    <thead><tr><th>Question</th><th>If “Yes”</th><th>Likely Policy</th></tr></thead>
+    <tbody>
+      <tr><td>Can every visitor safely receive the same response?</td><td>Public and visitor-independent</td><td><code class="inline">public</code> cache may be appropriate</td></tr>
+      <tr><td>Does it contain account, session, or personalized data?</td><td>Private</td><td><code class="inline">private, no-store</code></td></tr>
+      <tr><td>Does a query parameter materially change the response?</td><td>Potential cache fragmentation</td><td>Bypass or vary carefully</td></tr>
+      <tr><td>Does the content change slowly?</td><td>Good reuse potential</td><td>Longer TTL or ISR</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn"><strong>Common mistake:</strong> “Cache everything” is not a performance strategy. It is a privacy incident wearing running shoes.</div>
+</section>
+
+<section class="topic" id="m5">
+  <div class="topic-head">
+    <span class="topic-tag">Module 5 · Edge Delivery</span>
+    <h2>Put Cloud CDN in Front of Cloud Run</h2>
+    <p class="sub">Once the application marks public content correctly, the CDN can serve reusable responses from an edge location instead of repeating work at the origin.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">First visitor and repeat visitor</div>
+    <div class="split-flow">
+      <div class="side">
+        <h4>First Request: Cache Miss</h4>
+        <div class="stack">
+          <div class="stack-step">Browser</div>
+          <div class="stack-step">Cloud CDN checks cache</div>
+          <div class="stack-step">Cloud Run generates response</div>
+          <div class="stack-step">CDN stores safe response</div>
+        </div>
+      </div>
+      <div class="split-arrow">→</div>
+      <div class="side good">
+        <h4>Repeat Request: Cache Hit</h4>
+        <div class="stack">
+          <div class="stack-step fast">Browser</div>
+          <div class="stack-step fast">Cloud CDN finds response</div>
+          <div class="stack-step fast">Edge returns it directly</div>
+          <div class="stack-step fast">Origin work avoided</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dual">
+    <div class="panel tech">
+      <h4>Why TTFB Drops</h4>
+      <p><strong>Time to First Byte</strong> measures how long the browser waits before the first response byte arrives. A cache hit can avoid application startup, external requests, database work, and rendering.</p>
+    </div>
+    <div class="panel analogy">
+      <h4>📚 Library Analogy</h4>
+      <p>The origin server is the archive room. The CDN is the popular-books shelf near the entrance.</p>
+      <p>Readers get common material quickly, while rare or private requests still go to the archive.</p>
+    </div>
+  </div>
+
+  <div class="reveal">
+    <button type="button">Reveal: Why not cache directly inside the browser only?</button>
+    <div class="reveal-content">
+      Browser caching helps one visitor. CDN caching can help many visitors and crawlers. It also reduces load on Cloud Run and creates a shared edge layer between the public internet and the application.
+    </div>
+  </div>
+</section>
+
+<section class="topic" id="m6">
+  <div class="topic-head">
+    <span class="topic-tag">Module 6 · Next.js Rendering Choices</span>
+    <h2>Do Not Render Every Route the Same Way</h2>
+    <p class="sub">A bank guide, a live news feed, and an authenticated dashboard have different freshness and privacy requirements.</p>
+  </div>
+
+  <table class="cmp">
+    <thead><tr><th>Rendering Mode</th><th>Best Fit</th><th>Trade-off</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Static Generation</strong></td><td>Content that changes only with a deployment</td><td>Very fast, but updates require rebuild</td></tr>
+      <tr><td><strong>ISR</strong></td><td>Evergreen guides refreshed periodically</td><td>Fast cached pages with controlled freshness</td></tr>
+      <tr><td><strong>Server Rendering</strong></td><td>Request-dependent public pages</td><td>Fresh response, more origin work</td></tr>
+      <tr><td><strong>Dynamic / No-store</strong></td><td>Authenticated and personalized flows</td><td>Correct privacy, little shared caching</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card-grid">
+    <div class="card"><div class="icon">📘</div><h4>Good ISR Candidate</h4><p>Mortgage education guide, bank profile, credit card explainer, interview-prep landing page.</p></div>
+    <div class="card"><div class="icon">⚡</div><h4>Good Dynamic Candidate</h4><p>Live user session, saved scenarios, admin dashboard, request-specific API.</p></div>
+    <div class="card"><div class="icon">🧩</div><h4>Hybrid Page</h4><p>Static educational shell with a dynamic calculator or advisor loaded separately.</p></div>
+  </div>
+
+  <div class="callout"><strong>Architecture is classification:</strong> first classify the route by freshness, privacy, and reuse. Then choose its rendering mode.</div>
+</section>
+
+<section class="topic" id="m7">
+  <div class="topic-head">
+    <span class="topic-tag">Module 7 · APIs and Database</span>
+    <h2>Remove Repeated Work From the Hot Path</h2>
+    <p class="sub">Fast APIs often become fast by doing less, not by becoming more elaborate.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">External fetch vs cached read</div>
+    <div class="split-flow">
+      <div class="side bad">
+        <h4>❌ Request-Time Aggregation</h4>
+        <div class="stack">
+          <div class="stack-step hot">Request arrives</div>
+          <div class="stack-step hot">Fetch several external feeds</div>
+          <div class="stack-step hot">Parse and normalize</div>
+          <div class="stack-step hot">Handle slow/failing source</div>
+          <div class="stack-step hot">Return JSON</div>
+        </div>
+      </div>
+      <div class="split-arrow">→</div>
+      <div class="side good">
+        <h4>✅ Prebuilt Result</h4>
+        <div class="stack">
+          <div class="stack-step fast">Request arrives</div>
+          <div class="stack-step fast">Read prepared object</div>
+          <div class="stack-step fast">Return JSON</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dual">
+    <div class="panel tech">
+      <h4>Database Guidance</h4>
+      <p>Databases remain essential for users, saved scenarios, permissions, and durable product data. But a public guide should not perform repeated joins merely to render identical content for every visitor.</p>
+      <p>Reduce unnecessary queries, batch lookups, index frequent access paths, and precompute slowly changing aggregates.</p>
+    </div>
+    <div class="panel analogy">
+      <h4>🚧 Toll Booth Analogy</h4>
+      <p>The database should support the road network, not become a toll booth every visitor must stop at.</p>
+      <p>Use it when state is needed. Bypass it when the response is already safely prepared.</p>
+    </div>
+  </div>
+</section>
+
+<section class="topic" id="m8">
+  <div class="topic-head">
+    <span class="topic-tag">Module 8 · Measure the Production System</span>
+    <h2>“Feels Faster” Is Not a Metric</h2>
+    <p class="sub">Measure the page from outside the application, inspect CDN behavior, and watch logs after deployment.</p>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="value">~98 ms</div><div class="name">Homepage TTFB</div><div class="note">Repeat production request after CDN caching.</div></div>
+    <div class="metric"><div class="value">~135 ms</div><div class="name">RBC Accounts Guide</div><div class="note">Public guide page on the production path.</div></div>
+    <div class="metric"><div class="value">~94 ms</div><div class="name">RBC Credit Cards Guide</div><div class="note">Repeat request served through the optimized stack.</div></div>
+  </div>
+
+  <div class="callout good"><strong>Important:</strong> these are observed repeat-request measurements from the production validation described in this case study. They are not a universal promise and will vary by geography, network, cache state, and deployment.</div>
+
+  <h3>What to measure</h3>
+  <div class="card-grid">
+    <div class="card"><div class="icon">⏱️</div><h4>TTFB</h4><p>How quickly the response begins.</p></div>
+    <div class="card"><div class="icon">🖼️</div><h4>LCP</h4><p>When the largest visible content finishes rendering.</p></div>
+    <div class="card"><div class="icon">🧭</div><h4>INP</h4><p>How quickly the page reacts to user interaction.</p></div>
+    <div class="card"><div class="icon">📦</div><h4>Cache Hit Ratio</h4><p>How often the CDN avoids origin work.</p></div>
+    <div class="card"><div class="icon">🔥</div><h4>5xx Errors</h4><p>Whether optimization introduced instability.</p></div>
+    <div class="card"><div class="icon">📜</div><h4>Logs</h4><p>Latency, rate limits, exceptions, and request paths.</p></div>
+  </div>
+</section>
+
+<section class="topic" id="m9">
+  <div class="topic-head">
+    <span class="topic-tag">Module 9 · Final Production Architecture</span>
+    <h2>The AI Model Is One Component in a Larger System</h2>
+    <p class="sub">The final design separates fast public delivery, dynamic user work, deterministic finance logic, and expensive AI generation.</p>
+  </div>
+
+  <div class="diagram">
+    <div class="diagram-title">CanadianBankNews production request map</div>
+    <div class="flow">
+      <div class="node">🧑 Browser</div><div class="arrow">→</div>
+      <div class="node violet">🌍 HTTPS Load Balancer<br/>+ Cloud CDN</div><div class="arrow">→</div>
+      <div class="node">▲ Next.js on Cloud Run</div>
+    </div>
+    <div style="height:18px"></div>
+    <div class="flow">
+      <div class="node green">📄 Cached Public Content</div>
+      <div class="node amber">🧮 Deterministic Rules<br/>and Calculators</div>
+      <div class="node gray">🗄️ Cloud SQL<br/>when state is needed</div>
+      <div class="node violet">✨ Vertex AI / Gemini<br/>for selected AI tasks</div>
+    </div>
+    <div style="height:18px"></div>
+    <div class="flow">
+      <div class="node gray">⏰ Scheduled Jobs<br/>fetch + summarize + store</div><div class="arrow">→</div>
+      <div class="node green">⚡ Prepared Results</div><div class="arrow">→</div>
+      <div class="node">👥 Fast Public Experience</div>
+    </div>
+  </div>
+
+  <div class="dual">
+    <div class="panel tech">
+      <h4>Production Boundary</h4>
+      <p>The browser should never directly call the model with trusted credentials. Cloud Run validates the request, chooses tools and context, applies limits, and controls what is returned.</p>
+      <p>For financial calculations, deterministic code produces the numbers. The model can help explain them in natural language.</p>
+    </div>
+    <div class="panel insight">
+      <h4>Four Questions</h4>
+      <p><strong>Can I remove this work?</strong></p>
+      <p><strong>Can I move it earlier?</strong></p>
+      <p><strong>Can I cache it safely?</strong></p>
+      <p><strong>Must it happen now?</strong></p>
+    </div>
+  </div>
+
+  <h3>Production performance checklist</h3>
+  <table class="cmp">
+    <tbody>
+      <tr><td>✓ Move expensive AI work outside the request path where freshness permits.</td></tr>
+      <tr><td>✓ Cache only visitor-independent content.</td></tr>
+      <tr><td>✓ Keep authenticated and personalized responses private or no-store.</td></tr>
+      <tr><td>✓ Use Cloud CDN only after origin cache rules are correct.</td></tr>
+      <tr><td>✓ Match Next.js rendering mode to each route.</td></tr>
+      <tr><td>✓ Avoid external live fetches during first render where possible.</td></tr>
+      <tr><td>✓ Measure TTFB and user-facing Core Web Vitals.</td></tr>
+      <tr><td>✓ Monitor logs and errors after every deployment.</td></tr>
+      <tr><td>✓ Keep Dev and Production infrastructure isolated.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="question">
+    Explore the live case study at
+    <a href="https://www.canadianbanknews.com/" target="_blank" rel="noopener">CanadianBankNews.com</a>.
+    The lesson is not that every website needs this exact stack. The lesson is to keep expensive work away from the user's stopwatch.
+  </div>
+
+  <div class="quiz">
+    <div class="q">Which optimization should usually come before paying for always-on Cloud Run instances?</div>
+    <div class="opts">
+      <div class="opt" data-correct="false" data-explain="Minimum instances can reduce cold starts, but they do not remove slow external calls or repeated AI work.">Set the minimum instance count to 1 immediately</div>
+      <div class="opt" data-correct="true" data-explain="Correct. First remove, precompute, or cache expensive request-time work. Then evaluate whether cold starts remain important.">Move expensive work out of the live request path</div>
+      <div class="opt" data-correct="false" data-explain="Turning every page into a dynamic server-rendered route often increases origin work.">Make every route server-rendered</div>
+    </div>
+    <div class="explain"></div>
+  </div>
+</section>
+
+<footer>
+  <p>Applied AI Engineering · Production Website Performance Case Study</p>
+  <p>Original teaching material based on the CanadianBankNews Google Cloud architecture.</p>
+  <div class="signature">MR-SRIKANTH</div>
+</footer>
+
+<script>
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) entry.target.classList.add('in');
+  });
+}, { threshold: 0.06 });
+document.querySelectorAll('section.topic').forEach(section => observer.observe(section));
+
+document.querySelectorAll('.reveal button').forEach(button => {
+  button.addEventListener('click', () => {
+    const box = button.closest('.reveal');
+    box.classList.toggle('open');
+    button.textContent = box.classList.contains('open')
+      ? 'Hide explanation'
+      : 'Reveal: Why not cache directly inside the browser only?';
+  });
+});
+
+document.querySelectorAll('.quiz').forEach(quiz => {
+  const explain = quiz.querySelector('.explain');
+  quiz.querySelectorAll('.opt').forEach(opt => {
+    opt.addEventListener('click', () => {
+      quiz.querySelectorAll('.opt').forEach(o => {
+        o.style.opacity = '.58';
+        o.style.borderColor = '';
+        o.style.background = '';
+      });
+      opt.style.opacity = '1';
+      const correct = opt.dataset.correct === 'true';
+      opt.style.borderColor = correct ? '#22c55e' : '#fb7185';
+      opt.style.background = correct ? '#f0fdf4' : '#fff1f2';
+      explain.textContent = opt.dataset.explain;
+      explain.classList.add('show');
+    });
+  });
+});
+</script>
+</body>
+</html>
